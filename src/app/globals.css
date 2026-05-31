@@ -1,26 +1,107 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* ── Palette "Sauge Doré" ── */
+  --color-sage: #7c8866;
+  --color-sage-deep: #69755a;
+  --color-sage-tint: #e7ebdf;
+  --color-brass: #b79a5e;
+  --color-brass-deep: #9e8348;
+  --color-brass-tint: #f1ebda;
+  --color-paper: #f6f3ea;
+  --color-surface: #fdfbf6;
+  --color-surface-sunk: #ede8da;
+  --color-line: #e6e0d0;
+  --color-ink: #3c3b30;
+  --color-ink-2: #6e6b59;
+  --color-ink-3: #9c9885;
+  --color-danger: #b5654a;
+  --color-danger-tint: #f3e4db;
+
+  /* ── Fonts (next/font variables, see layout.tsx) ── */
+  --font-sans: var(--font-schibsted), var(--font-noto-sc), system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ── Radii ── */
+  --radius-btn: 14px;
+  --radius-card: 20px;
+  --radius-input: 14px;
+  --radius-tile: 16px;
+  --radius-sheet: 26px;
+  --radius-phone: 42px;
+
+  /* ── Shadows (warm, low contrast) ── */
+  --shadow-card: 0 1px 2px rgba(60, 59, 48, 0.04), 0 6px 20px -10px rgba(60, 59, 48, 0.12);
+  --shadow-soft: 0 8px 30px -8px rgba(60, 59, 48, 0.18);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html,
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+.text-balance {
+  text-wrap: balance;
+}
+
+/* hide scrollbars on scroll containers (matches prototype) */
+main::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+main,
+.overflow-y-auto {
+  scrollbar-width: none;
+}
+
+/* ── Animations (ported from prototype <style>) ── */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }
+.shimmer {
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 70%
+  );
+  animation: shimmer 1.8s infinite;
+}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.sheet-up {
+  animation: sheetUp 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sheet-fade {
+  animation: fadeIn 0.25s ease;
+}
+.toast-in {
+  animation: fadeIn 0.2s ease;
 }
