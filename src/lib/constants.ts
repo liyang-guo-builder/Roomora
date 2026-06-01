@@ -43,12 +43,13 @@ export const STYLE_NAMES: Record<StyleId, [string, string]> = STYLES.reduce(
   {} as Record<StyleId, [string, string]>,
 );
 
-/** Rotating reassurance copy on the Generating screen. */
+/** Rotating, constructive "designer at work" copy on the Generating screen. */
 export const GEN_MSGS: [string, string][] = [
-  ["Keeping your windows where they are…", "正在保留窗户的位置…"],
-  ["Choosing pieces that fit your space…", "正在挑选适合空间的家具…"],
-  ["Matching the light in your room…", "正在匹配房间的光线…"],
-  ["Styling with calm, warm tones…", "正在以温暖宁静的色调布置…"],
+  ["Studying your room’s light and layout…", "正在分析房间的采光与格局…"],
+  ["Keeping your windows, doors and walls in place…", "正在保留窗户、门与墙面…"],
+  ["Choosing furniture that fits your space…", "正在挑选适合空间的家具…"],
+  ["Placing the sofa, rug and lighting…", "正在布置沙发、地毯与灯光…"],
+  ["Adding plants and finishing touches…", "正在添加绿植与细节点缀…"],
 ];
 
 /** Refine suggestion chips. */

@@ -1,18 +1,25 @@
 "use client";
 
-import { useRef } from "react";
-import Image from "next/image";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { readImageFile } from "@/lib/readImageFile";
 import { Icon, type IconName } from "@/components/ui";
+import { BeforeAfter } from "@/components/ui/BeforeAfter";
+
+const EXAMPLES = [
+  { id: "scandi", en: "Scandinavian", zh: "北欧风", after: "/examples/proof_scandi.png" },
+  { id: "japandi", en: "Japandi", zh: "日式简约", after: "/examples/proof_japandi.jpg" },
+  { id: "boho", en: "Bohemian", zh: "波西米亚", after: "/examples/proof_boho.jpg" },
+];
 
 export function LandingScreen() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const router = useRouter();
   const setRoomPhoto = useStore((s) => s.setRoomPhoto);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [sel, setSel] = useState(0);
 
   const openPicker = () => fileRef.current?.click();
 
@@ -76,31 +83,34 @@ export function LandingScreen() {
         {t("JPG or PNG · your photo is private", "JPG 或 PNG · 照片仅你可见")}
       </p>
 
-      {/* proof thumbnails */}
+      {/* interactive proof — same room, switch styles, drag to compare */}
       <div className="mt-8 flex items-baseline justify-between">
         <h2 className="text-[15px] font-semibold text-ink">
           {t("Real rooms, restyled", "真实房间，焕新效果")}
         </h2>
         <span className="text-[12.5px] text-ink-3">{t("Drag to compare", "拖动对比")}</span>
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-2.5">
-        {[
-          { id: "scandi", after: "/examples/proof_scandi.png" },
-          { id: "japandi", after: "/examples/proof_japandi.jpg" },
-          { id: "boho", after: "/examples/proof_boho.jpg" },
-        ].map((ex) => (
-          <div key={ex.id} className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-card">
-            {/* after (full) */}
-            <Image src={ex.after} alt="" fill sizes="33vw" className="object-cover" />
-            {/* before (left half, clipped to align with the after) */}
-            <div className="absolute inset-y-0 left-0 w-1/2 overflow-hidden">
-              <div className="relative h-full w-[200%]">
-                <Image src="/examples/room-before.jpg" alt="" fill sizes="33vw" className="object-cover" />
-              </div>
-            </div>
-            <div className="absolute top-0 bottom-0 left-1/2 w-[2px] bg-white/85" />
-          </div>
+      <div className="mt-3 flex gap-2">
+        {EXAMPLES.map((ex, idx) => (
+          <button
+            key={ex.id}
+            onClick={() => setSel(idx)}
+            className={`flex-1 rounded-full px-3 py-1.5 text-[12.5px] font-medium border transition-colors active:scale-[.98] ${
+              idx === sel
+                ? "bg-sage text-paper border-sage"
+                : "bg-surface text-ink-2 border-line hover:border-sage/50"
+            }`}
+          >
+            {lang === "en" ? ex.en : ex.zh}
+          </button>
         ))}
+      </div>
+      <div className="mt-3">
+        <BeforeAfter
+          beforeUrl="/examples/room-before.jpg"
+          afterUrl={EXAMPLES[sel].after}
+          height={280}
+        />
       </div>
 
       {/* trust row */}
