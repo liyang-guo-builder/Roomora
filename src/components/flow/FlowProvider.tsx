@@ -12,7 +12,6 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { useAuthSync } from "@/lib/useAuthSync";
-import { anonTrialUsed, markAnonTrialUsed } from "@/lib/anonTrial";
 import {
   authService,
   creditsService,
@@ -69,6 +68,8 @@ export function FlowProvider({ children }: { children: ReactNode }) {
   const setCredits = useStore((s) => s.setCredits);
   const incSaved = useStore((s) => s.incSaved);
   const anon = useStore((s) => s.anon);
+  const anonTrialRemaining = useStore((s) => s.anonTrialRemaining);
+  const consumeAnonTrial = useStore((s) => s.consumeAnonTrial);
   const setCurrentSaved = useStore((s) => s.setCurrentSaved);
   const setResult = useStore((s) => s.setResult);
   const appendVersion = useStore((s) => s.appendVersion);
@@ -97,14 +98,13 @@ export function FlowProvider({ children }: { children: ReactNode }) {
   const doGenerate = useCallback(async () => {
     const roomPhoto = useStore.getState().roomPhoto;
 
-    // Anonymous trial: first generation is free (no signup, no server credit).
-    // A second generation requires sign-in. (Server allows anon; client gates.)
+    // Anonymous trial: a few free designs (no signup, no server credit).
+    // The free design is consumed only on SUCCESS. (Server allows anon; client gates.)
     if (anon) {
-      if (anonTrialUsed()) {
+      if (anonTrialRemaining <= 0) {
         openModal("auth", { reason: "free" });
         return;
       }
-      markAnonTrialUsed();
       router.push("/generating");
       try {
         const result = await generationService.generate({
@@ -113,10 +113,11 @@ export function FlowProvider({ children }: { children: ReactNode }) {
           note: setup.note,
           budget: setup.budget,
         });
+        consumeAnonTrial();
         setResult(result);
         router.push("/result");
       } catch {
-        router.push("/error"); // no server credit spent → nothing to refund
+        router.push("/error"); // no free design consumed → nothing to refund
       }
       return;
     }
@@ -151,7 +152,18 @@ export function FlowProvider({ children }: { children: ReactNode }) {
       }
       router.push("/error");
     }
-  }, [anon, credits, refund, setCredits, router, setup, setResult, openModal]);
+  }, [
+    anon,
+    anonTrialRemaining,
+    consumeAnonTrial,
+    credits,
+    refund,
+    setCredits,
+    router,
+    setup,
+    setResult,
+    openModal,
+  ]);
 
   const doSave = useCallback(() => {
     if (anon) {
@@ -188,17 +200,34 @@ export function FlowProvider({ children }: { children: ReactNode }) {
 
   const doApplyRefine = useCallback(
     async (note: string) => {
-      // Refine requires auth (it consumes a real server credit).
+      const result = useStore.getState().result;
+      if (!result) return;
+
+      // Anonymous: a refine also uses one free design (consumed on success).
       if (anon) {
-        openModal("auth", { reason: "free" });
+        if (anonTrialRemaining <= 0) {
+          openModal("auth", { reason: "free" });
+          return;
+        }
+        router.push("/generating");
+        try {
+          const next = await generationService.refine({ result, note });
+          consumeAnonTrial();
+          const newest = next.versions[next.versions.length - 1];
+          setResult(result);
+          appendVersion(newest);
+          router.push("/result");
+        } catch {
+          router.push("/error");
+        }
         return;
       }
+
+      // Signed in: server spends/refunds a real credit.
       if (credits < 1) {
         openModal("buy");
         return;
       }
-      const result = useStore.getState().result;
-      if (!result) return;
       router.push("/generating");
       try {
         const next = await generationService.refine({ result, note });
@@ -221,7 +250,18 @@ export function FlowProvider({ children }: { children: ReactNode }) {
         router.push("/error");
       }
     },
-    [anon, credits, refund, setCredits, router, setResult, appendVersion, openModal],
+    [
+      anon,
+      anonTrialRemaining,
+      consumeAnonTrial,
+      credits,
+      refund,
+      setCredits,
+      router,
+      setResult,
+      appendVersion,
+      openModal,
+    ],
   );
 
   const onAuthed = useCallback(

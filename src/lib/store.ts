@@ -22,11 +22,16 @@ export interface SessionUser {
   email: string | null;
 }
 
+/** Free designs an anonymous (signed-out) user gets before sign-in is required. */
+export const ANON_TRIAL_MAX = 3;
+
 interface RoomoraState {
   /* ── persisted global state ── */
   lang: Lang;
   credits: number;
   saved: number;
+  /** Remaining free anonymous designs (generate or refine). Persisted per browser. */
+  anonTrialRemaining: number;
 
   /* ── transient per-flow state (not persisted) ── */
   hasPhoto: boolean;
@@ -47,6 +52,7 @@ interface RoomoraState {
   grant: (n: number) => void;
   setCredits: (n: number) => void;
   incSaved: () => void;
+  consumeAnonTrial: () => void;
 
   setHasPhoto: (v: boolean) => void;
   setRoomPhoto: (uri: string | null) => void;
@@ -65,6 +71,7 @@ export const useStore = create<RoomoraState>()(
       lang: "en",
       credits: 12,
       saved: 3,
+      anonTrialRemaining: ANON_TRIAL_MAX,
 
       hasPhoto: false,
       roomPhoto: null,
@@ -80,6 +87,8 @@ export const useStore = create<RoomoraState>()(
       grant: (n) => set({ credits: get().credits + n }),
       setCredits: (n) => set({ credits: n }),
       incSaved: () => set({ saved: get().saved + 1 }),
+      consumeAnonTrial: () =>
+        set({ anonTrialRemaining: Math.max(0, get().anonTrialRemaining - 1) }),
 
       setHasPhoto: (hasPhoto) => set({ hasPhoto }),
       setRoomPhoto: (roomPhoto) => set({ roomPhoto, hasPhoto: !!roomPhoto }),
@@ -106,7 +115,12 @@ export const useStore = create<RoomoraState>()(
       name: "roomora",
       storage: createJSONStorage(() => localStorage),
       // Only the global state persists, matching the prototype's localStorage shape.
-      partialize: (s) => ({ lang: s.lang, credits: s.credits, saved: s.saved }),
+      partialize: (s) => ({
+        lang: s.lang,
+        credits: s.credits,
+        saved: s.saved,
+        anonTrialRemaining: s.anonTrialRemaining,
+      }),
     },
   ),
 );

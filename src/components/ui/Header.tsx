@@ -32,7 +32,14 @@ export function LangToggle() {
 
 export function CreditPill({ onClick }: { onClick?: () => void }) {
   const credits = useStore((s) => s.credits);
-  const low = credits <= 2;
+  const anon = useStore((s) => s.anon);
+  const freeLeft = useStore((s) => s.anonTrialRemaining);
+  const lang = useStore((s) => s.lang);
+  // Anonymous users see remaining free designs; signed-in users see credits.
+  const low = anon ? freeLeft <= 0 : credits <= 2;
+  const label = anon
+    ? `${freeLeft} ${lang === "en" ? "free" : "免费"}`
+    : `${credits}`;
   return (
     <button
       onClick={onClick}
@@ -43,7 +50,7 @@ export function CreditPill({ onClick }: { onClick?: () => void }) {
       }`}
     >
       <Hex size={13} className={low ? "text-danger" : "text-brass"} />
-      {credits}
+      {label}
     </button>
   );
 }
