@@ -11,8 +11,11 @@ import {
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
+import { useAuthSync } from "@/lib/useAuthSync";
+import { anonTrialUsed, markAnonTrialUsed } from "@/lib/anonTrial";
 import {
   authService,
+  creditsService,
   generationService,
   paymentService,
   designsService,
@@ -57,13 +60,14 @@ export function FlowProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { t } = useT();
 
+  // Keep the store mirrored to the real Supabase session + credit balance.
+  useAuthSync();
+
   const credits = useStore((s) => s.credits);
-  const spend = useStore((s) => s.spend);
   const refund = useStore((s) => s.refund);
-  const grant = useStore((s) => s.grant);
+  const setCredits = useStore((s) => s.setCredits);
   const incSaved = useStore((s) => s.incSaved);
   const anon = useStore((s) => s.anon);
-  const setAnon = useStore((s) => s.setAnon);
   const setCurrentSaved = useStore((s) => s.setCurrentSaved);
   const setResult = useStore((s) => s.setResult);
   const appendVersion = useStore((s) => s.appendVersion);
@@ -90,11 +94,43 @@ export function FlowProvider({ children }: { children: ReactNode }) {
   const closeModal = useCallback(() => setModal(null), []);
 
   const doGenerate = useCallback(async () => {
+    // Anonymous trial: first generation is free (no signup, no server credit).
+    // A second generation requires sign-in.
+    if (anon) {
+      if (anonTrialUsed()) {
+        openModal("auth", { reason: "free" });
+        return;
+      }
+      markAnonTrialUsed();
+      router.push("/generating");
+      try {
+        const result = await generationService.generate({
+          roomPhoto: null,
+          style: setup.style ?? "scandi",
+          note: setup.note,
+          budget: setup.budget,
+        });
+        setResult(result);
+        router.push("/result");
+      } catch {
+        router.push("/error"); // no server credit spent → nothing to refund
+      }
+      return;
+    }
+
+    // Signed in: spend a real server credit (RPC), refund on failure.
     if (credits < 1) {
       openModal("buy");
       return;
     }
-    spend(1);
+    let newBalance: number;
+    try {
+      newBalance = await creditsService.spend(1);
+    } catch {
+      openModal("buy"); // insufficient credits / RPC error
+      return;
+    }
+    setCredits(newBalance);
     router.push("/generating");
     try {
       const result = await generationService.generate({
@@ -106,10 +142,15 @@ export function FlowProvider({ children }: { children: ReactNode }) {
       setResult(result);
       router.push("/result");
     } catch {
-      refund(1); // refund on failure
+      try {
+        const refunded = await creditsService.refund(1);
+        setCredits(refunded);
+      } catch {
+        refund(1); // optimistic local refund if RPC fails
+      }
       router.push("/error");
     }
-  }, [credits, spend, refund, router, setup, setResult, openModal]);
+  }, [anon, credits, refund, setCredits, router, setup, setResult, openModal]);
 
   const doSave = useCallback(() => {
     if (anon) {
@@ -132,13 +173,25 @@ export function FlowProvider({ children }: { children: ReactNode }) {
 
   const doApplyRefine = useCallback(
     async (note: string) => {
+      // Refine requires auth (it consumes a real server credit).
+      if (anon) {
+        openModal("auth", { reason: "free" });
+        return;
+      }
       if (credits < 1) {
         openModal("buy");
         return;
       }
       const result = useStore.getState().result;
       if (!result) return;
-      spend(1);
+      let newBalance: number;
+      try {
+        newBalance = await creditsService.spend(1);
+      } catch {
+        openModal("buy");
+        return;
+      }
+      setCredits(newBalance);
       router.push("/generating");
       try {
         const next = await generationService.refine({ result, note });
@@ -148,32 +201,56 @@ export function FlowProvider({ children }: { children: ReactNode }) {
         appendVersion(newest);
         router.push("/result");
       } catch {
-        refund(1);
+        try {
+          const refunded = await creditsService.refund(1);
+          setCredits(refunded);
+        } catch {
+          refund(1);
+        }
         router.push("/error");
       }
     },
-    [credits, spend, refund, router, setResult, appendVersion, openModal],
+    [anon, credits, refund, setCredits, router, setResult, appendVersion, openModal],
   );
 
   const onAuthed = useCallback(
     async (provider: "google" | "email", email?: string) => {
-      const session = await authService.signIn(provider, email);
-      setAnon(false);
-      closeModal();
-      grant(session.grantedCredits);
-      showToast(t("Signed in · +3 credits", "已登录 · +3 积分"), "check");
+      if (provider === "email") {
+        if (!email) return;
+        try {
+          await authService.signIn("email", email);
+          closeModal();
+          // Magic link: no immediate session — the user must click the email.
+          // The real session (and +3 credits for new users) lands via
+          // /auth/callback, which onAuthStateChange picks up.
+          showToast(t("Check your email for a magic link", "请查收登录链接"), "mail");
+        } catch {
+          showToast(t("Couldn’t send the link — try again", "发送失败，请重试"), "info");
+        }
+        return;
+      }
+      // Google OAuth not configured yet — keep as a designed placeholder.
+      showToast(t("Google sign-in coming soon", "Google 登录即将上线"), "info");
     },
-    [setAnon, closeModal, grant, showToast, t],
+    [closeModal, showToast, t],
   );
 
   const doPurchase = useCallback(
     async (packIndex: number, method: PayMethod) => {
+      // Payment stays mock; credits are granted via the real RPC so the
+      // server ledger stays authoritative.
       const { added } = await paymentService.purchase(packIndex, method);
-      grant(added);
+      try {
+        const newBalance = await creditsService.grant(added);
+        setCredits(newBalance);
+      } catch {
+        // Anonymous or RPC failure — fall back to local grant for display.
+        useStore.getState().grant(added);
+      }
       closeModal();
       showToast(t("Credits added", "积分已到账"), "check");
     },
-    [grant, closeModal, showToast, t],
+    [setCredits, closeModal, showToast, t],
   );
 
   // referenced to keep the import meaningful for the error edge-state hook

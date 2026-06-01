@@ -16,6 +16,12 @@ const DEFAULT_SETUP: SetupState = {
   budget: null,
 };
 
+/** Minimal authenticated-user shape mirrored from the Supabase session. */
+export interface SessionUser {
+  id: string;
+  email: string | null;
+}
+
 interface RoomoraState {
   /* ── persisted global state ── */
   lang: Lang;
@@ -26,6 +32,9 @@ interface RoomoraState {
   hasPhoto: boolean;
   setup: SetupState;
   result: GenerationResult | null;
+  /** Real Supabase session user; null when signed out. */
+  user: SessionUser | null;
+  /** Derived: true when there is no signed-in user. Kept for screen parity. */
   anon: boolean;
   currentSaved: boolean;
 
@@ -41,6 +50,7 @@ interface RoomoraState {
   setSetup: (s: SetupState) => void;
   setResult: (r: GenerationResult | null) => void;
   appendVersion: (v: GenerationVersion) => void;
+  setUser: (u: SessionUser | null) => void;
   setAnon: (v: boolean) => void;
   setCurrentSaved: (v: boolean) => void;
   resetFlow: () => void;
@@ -56,6 +66,7 @@ export const useStore = create<RoomoraState>()(
       hasPhoto: false,
       setup: DEFAULT_SETUP,
       result: null,
+      user: null,
       anon: true,
       currentSaved: false,
 
@@ -74,6 +85,7 @@ export const useStore = create<RoomoraState>()(
         if (!r) return;
         set({ result: { ...r, versions: [...r.versions, v] } });
       },
+      setUser: (user) => set({ user, anon: !user }),
       setAnon: (anon) => set({ anon }),
       setCurrentSaved: (currentSaved) => set({ currentSaved }),
       resetFlow: () =>

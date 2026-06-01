@@ -21,6 +21,17 @@ Session log. Append at the end of every session.
 - **Engine = Qwen-Image-Edit on fal.ai.** Spike on the real Paris room photo: Qwen preserved exact window/shelves/floor on restyle AND obeyed a targeted "only add a green sofa" edit (kept everything else, even the cardboard box). MiniMax failed both (invents rooms, ignores edits). See DECISIONS.md D1. fal funded with $10. Core technical risk retired.
 - Spike artifacts in `../spike/` (qwen_restyle.png, qwen_edit-sofa.png = the proof).
 
+## Session 2 (cont.) — Production deploy LIVE
+- **https://roomora-gamma.vercel.app is live** with the real Phase 1 app (200, renders, no console errors).
+- Deploy gotcha fixed: repo had app on `master` while Vercel deployed default `main` (README only) → 404. Merged init into app, pushed app to `main` (now the single deploy branch). Vercel project `roomora` had Framework Preset = "Other" (imported when main had only README) → added committed `vercel.json {"framework":"nextjs"}` and deployed via CLI.
+- **Deploy control established**: Vercel CLI + token (in `.env.local` as VERCEL_TOKEN), linked to `leos-projects-11d290bd/roomora`. Deploy with `npx vercel --prod --yes --scope leos-projects-11d290bd --token $VERCEL_TOKEN`. Orchestrator can now deploy autonomously each phase.
+- TODO Phase 2 deploy: add prod env vars via `vercel env add` (FAL_KEY, NEXT_PUBLIC_SUPABASE_URL/ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, TEST_USER_EMAILS).
+
+## Session 2 (cont.) — Phase 1 VERIFIED on production (CLOSED)
+- Independent tester (against live https://roomora-gamma.vercel.app) → **PASS 9/9**: visual parity vs prototype, full flow (Landing→Setup→Generating→Result→Refine), slider drag, bilingual toggle, credit logic (12→spend→refund, danger ≤2), Auth/Buy/Share modals, bottom nav + Designs/Account, anon gating + mock +3 on sign-in.
+- Tester flagged "CDN Tailwind / in-browser Babel" warnings — VERIFIED as misattribution from the prototype tab. Production HTML has no CDN/Babel, serves compiled `/_next/static`, no console messages. Production = real optimized Next build. ✅
+- Phase 1 done. Next: Phase 2 backend — BLOCKED on a Supabase access token (sbp_...) to run migrations via Management API.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).

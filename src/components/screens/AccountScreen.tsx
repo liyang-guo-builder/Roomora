@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { useFlow } from "@/components/flow/FlowProvider";
+import { authService } from "@/lib/services";
 import { Btn, Icon, Hex, type IconName } from "@/components/ui";
 import type { Lang } from "@/lib/types";
 
@@ -39,10 +40,23 @@ function Row({
 
 export function AccountScreen() {
   const { t } = useT();
-  const { openModal } = useFlow();
+  const { openModal, showToast } = useFlow();
   const credits = useStore((s) => s.credits);
   const lang = useStore((s) => s.lang);
   const setLang = useStore((s) => s.setLang);
+  const user = useStore((s) => s.user);
+
+  const displayName = user?.email ? user.email.split("@")[0] : t("Guest", "访客");
+  const displayEmail = user?.email ?? t("Not signed in", "未登录");
+
+  async function handleSignOut() {
+    if (!user) {
+      openModal("auth", { reason: "save" });
+      return;
+    }
+    await authService.signOut();
+    showToast(t("Signed out", "已退出登录"), "check");
+  }
 
   const langOpts: [Lang, string][] = [
     ["en", "English"],
@@ -53,11 +67,11 @@ export function AccountScreen() {
     <div className="px-5 pt-4 pb-10">
       <div className="flex items-center gap-3.5 mb-6">
         <div className="w-14 h-14 rounded-full bg-brass-tint border border-brass/30 flex items-center justify-center text-brass-deep text-[20px] font-semibold">
-          L
+          {displayName.charAt(0).toUpperCase()}
         </div>
         <div>
-          <div className="text-[16px] font-semibold text-ink">{t("Léa", "Léa")}</div>
-          <div className="text-[13px] text-ink-3">lea@example.com</div>
+          <div className="text-[16px] font-semibold text-ink">{displayName}</div>
+          <div className="text-[13px] text-ink-3">{displayEmail}</div>
         </div>
       </div>
 
@@ -103,7 +117,7 @@ export function AccountScreen() {
       </div>
 
       <div className="mt-4 rounded-[20px] bg-surface border border-line/70 shadow-card overflow-hidden">
-        <Row icon="arrowLeft" label={t("Sign out", "退出登录")} danger onClick={() => {}} />
+        <Row icon="arrowLeft" label={t("Sign out", "退出登录")} danger onClick={() => void handleSignOut()} />
       </div>
       <p className="text-center text-[11px] text-ink-3 mt-6">
         Roomora · v1.0 · {t("Made in Paris", "巴黎制造")}
