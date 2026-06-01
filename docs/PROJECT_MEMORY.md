@@ -40,6 +40,13 @@ Session log. Append at the end of every session.
 - Phase 2 tester running against prod (focus: credits persist across reload = server-enforced).
 - Dashboard TODO (not blocking): Google OAuth provider not configured (button is placeholder); default Supabase SMTP has rate limits (custom SMTP later for real magic-link volume).
 
+## Session 2 (cont.) — Phase 3 real generation DEPLOYED
+- Generation engineer agent built Phase 3: POST /api/generate (server-authoritative credit spend → upload to `rooms` bucket → fal Qwen-Image-Edit → store in `designs` → generations row; refund on failure), real photo-upload UI, real before/after, refine version chains. Migration 0002 (generations) applied; public rooms/designs buckets created.
+- Verified locally + DB: real end-to-end test produced a real 1024² PNG, credit 12→11, generations row.
+- **Prompt tuning (orchestrator):** v1 output was too timid (barely furnished). Added explicit FURNISH instruction + reworded ARCHITECTURE_LOCK (locks structure, permits furniture). Re-tested on the Paris room → fully furnished Scandinavian living room with window/shelves/chair/proportions preserved. Big quality jump. (`src/lib/prompts.ts`)
+- tsc/build/lint green. Committed + pushed (main) + deployed to prod. Phase 3 tester running against prod (upload real photo → furnished same-room restyle → refine → credits).
+- Known TODO: anonymous free-trial is client-gated only (server-side hardening commented in /api/generate); radiator-under-window sometimes added (minor, acceptable).
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).

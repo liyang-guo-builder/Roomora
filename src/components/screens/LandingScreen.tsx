@@ -1,11 +1,12 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { readImageFile } from "@/lib/readImageFile";
-import { Icon, RoomPhoto, type IconName } from "@/components/ui";
+import { Icon, type IconName } from "@/components/ui";
 
 export function LandingScreen() {
   const { t } = useT();
@@ -83,13 +84,21 @@ export function LandingScreen() {
         <span className="text-[12.5px] text-ink-3">{t("Drag to compare", "拖动对比")}</span>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2.5">
-        {["scandi", "cream", "japandi"].map((s) => (
-          <div key={s} className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-card">
-            <RoomPhoto variant="after" rounded="rounded-none" tag={false} className="absolute inset-0" />
-            <div className="absolute inset-0 overflow-hidden" style={{ width: "50%" }}>
-              <RoomPhoto variant="before" rounded="rounded-none" tag={false} className="h-full" />
+        {[
+          { id: "scandi", after: "/examples/proof_scandi.png" },
+          { id: "japandi", after: "/examples/proof_japandi.jpg" },
+          { id: "boho", after: "/examples/proof_boho.jpg" },
+        ].map((ex) => (
+          <div key={ex.id} className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-card">
+            {/* after (full) */}
+            <Image src={ex.after} alt="" fill sizes="33vw" className="object-cover" />
+            {/* before (left half, clipped to align with the after) */}
+            <div className="absolute inset-y-0 left-0 w-1/2 overflow-hidden">
+              <div className="relative h-full w-[200%]">
+                <Image src="/examples/room-before.jpg" alt="" fill sizes="33vw" className="object-cover" />
+              </div>
             </div>
-            <div className="absolute top-0 bottom-0 left-1/2 w-[2px] bg-white/80" />
+            <div className="absolute top-0 bottom-0 left-1/2 w-[2px] bg-white/85" />
           </div>
         ))}
       </div>

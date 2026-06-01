@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useT } from "@/lib/i18n";
 import { STYLE_TONES } from "@/lib/constants";
 import type { StyleId } from "@/lib/types";
@@ -27,16 +28,18 @@ export function StyleTile({
       }`}
       style={{ background: STYLE_TONES[id] }}
     >
-      <div
-        className="absolute inset-0"
-        style={{ background: "radial-gradient(120% 70% at 75% 10%, rgba(255,255,255,.4), transparent 60%)" }}
+      <Image
+        src={`/styles/${id}.jpg`}
+        alt={lang === "en" ? en : zh}
+        fill
+        sizes="(max-width:480px) 45vw, 200px"
+        className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
       />
-      <div className="absolute right-2 bottom-9 w-[34%] h-[30%] rounded-[7px] bg-white/25" />
-      <div className="absolute inset-x-0 bottom-0 p-2.5 pt-6 bg-gradient-to-t from-black/45 to-transparent">
-        <div className="text-paper text-[13px] font-semibold leading-tight">
+      <div className="absolute inset-x-0 bottom-0 p-2.5 pt-7 bg-gradient-to-t from-black/60 via-black/20 to-transparent">
+        <div className="text-paper text-[13px] font-semibold leading-tight drop-shadow">
           {lang === "en" ? en : zh}
         </div>
-        <div className="text-paper/70 text-[10.5px] leading-tight">{lang === "en" ? zh : en}</div>
+        <div className="text-paper/75 text-[10.5px] leading-tight drop-shadow">{lang === "en" ? zh : en}</div>
       </div>
       {active && (
         <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-sage text-paper flex items-center justify-center shadow">
