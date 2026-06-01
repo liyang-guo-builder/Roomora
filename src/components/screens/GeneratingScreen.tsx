@@ -7,11 +7,10 @@ import { Icon } from "@/components/ui";
 import { GEN_MSGS, STYLE_NAMES } from "@/lib/constants";
 
 export function GeneratingScreen() {
-  const { t, lang } = useT();
+  const { t } = useT();
   const roomPhoto = useStore((s) => s.roomPhoto);
   const styleId = useStore((s) => s.setup.style) ?? "scandi";
   const [en, zh] = STYLE_NAMES[styleId] ?? STYLE_NAMES.scandi;
-  const styleName = lang === "en" ? en : zh;
 
   const [i, setI] = useState(0);
   useEffect(() => {
