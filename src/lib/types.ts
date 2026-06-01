@@ -33,6 +33,8 @@ export interface GenerationVersion {
   variant: "after";
   /** Free-text refine instruction that produced this version (null = original). */
   refineNote: string | null;
+  /** Public URL of the real generated PNG (Phase 3). null on legacy/mock data. */
+  resultUrl?: string | null;
 }
 
 /** Result of a generation/refine job. */
@@ -40,6 +42,8 @@ export interface GenerationResult {
   jobId: string;
   styleId: StyleId;
   versions: GenerationVersion[];
+  /** Public URL of the user's real uploaded room photo (the "before"). */
+  originalUrl?: string | null;
 }
 
 export interface CreditPack {

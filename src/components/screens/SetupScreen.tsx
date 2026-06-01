@@ -1,20 +1,29 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRef } from "react";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { useFlow } from "@/components/flow/FlowProvider";
+import { readImageFile } from "@/lib/readImageFile";
 import { Btn, Chip, Icon, RoomPhoto, StyleTile, FieldLabel, type IconName } from "@/components/ui";
 import { STYLES } from "@/lib/constants";
 import type { BudgetId, SetupTab } from "@/lib/types";
 
 export function SetupScreen() {
   const { t } = useT();
-  const router = useRouter();
   const { doGenerate } = useFlow();
   const setup = useStore((s) => s.setup);
   const setSetup = useStore((s) => s.setSetup);
+  const roomPhoto = useStore((s) => s.roomPhoto);
+  const setRoomPhoto = useStore((s) => s.setRoomPhoto);
+  const fileRef = useRef<HTMLInputElement>(null);
   const tab = setup.tab;
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setRoomPhoto(await readImageFile(file));
+  };
 
   const budgets: [BudgetId, string][] = [
     ["low", t("Under €1k", "€1k 以内")],
@@ -33,18 +42,37 @@ export function SetupScreen() {
   return (
     <div className="px-5 pb-32 pt-3">
       {/* your room */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={onFile}
+        className="hidden"
+      />
       <div className="flex items-center gap-3 p-3 rounded-2xl bg-surface border border-line/70 shadow-card">
-        <RoomPhoto variant="before" rounded="rounded-xl" tag={false} className="w-16 h-16 shrink-0" />
+        {roomPhoto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={roomPhoto}
+            alt={t("your room", "你的房间")}
+            className="w-16 h-16 shrink-0 rounded-xl object-cover"
+          />
+        ) : (
+          <RoomPhoto variant="before" rounded="rounded-xl" tag={false} className="w-16 h-16 shrink-0" />
+        )}
         <div className="min-w-0">
           <div className="text-[11px] font-mono uppercase tracking-wider text-ink-3">
             {t("your room", "你的房间")}
           </div>
           <div className="text-[14px] font-semibold text-ink truncate">
-            {t("Studio · Paris 14e", "工作室 · 巴黎 14 区")}
+            {roomPhoto
+              ? t("Your photo", "你的照片")
+              : t("Studio · Paris 14e", "工作室 · 巴黎 14 区")}
           </div>
         </div>
         <button
-          onClick={() => router.push("/")}
+          onClick={() => fileRef.current?.click()}
           className="ml-auto text-[12.5px] font-medium text-sage hover:underline shrink-0"
         >
           {t("Change", "更换")}

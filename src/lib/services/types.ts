@@ -32,7 +32,7 @@ export interface CreditsService {
 }
 
 export interface GenerateInput {
-  /** Placeholder; a real photo blob/URL slots in here in Phase 3. */
+  /** The user's room photo as a data URI (Phase 3). null falls back to no image. */
   roomPhoto: string | null;
   style: StyleId;
   note: string;
@@ -44,11 +44,23 @@ export interface RefineInput {
   note: string;
 }
 
+/** Raised when the server rejects a generation for lack of credits (HTTP 402). */
+export class InsufficientCreditsError extends Error {
+  constructor() {
+    super("insufficient_credits");
+    this.name = "InsufficientCreditsError";
+  }
+}
+
 export interface GenerationService {
-  /** Submit a generation job. Resolves with a result (~2.9s) or rejects on failure. */
-  generate(input: GenerateInput): Promise<GenerationResult>;
+  /**
+   * Submit a generation job. Resolves with a result or rejects on failure.
+   * Throws InsufficientCreditsError when the server returns 402.
+   * `balance` (when present) is the server-authoritative credit balance.
+   */
+  generate(input: GenerateInput): Promise<GenerationResult & { balance: number | null }>;
   /** Apply a refine instruction, appending a new version to the result. */
-  refine(input: RefineInput): Promise<GenerationResult>;
+  refine(input: RefineInput): Promise<GenerationResult & { balance: number | null }>;
 }
 
 export interface PurchaseResult {

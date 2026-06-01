@@ -32,6 +32,14 @@ Session log. Append at the end of every session.
 - Tester flagged "CDN Tailwind / in-browser Babel" warnings — VERIFIED as misattribution from the prototype tab. Production HTML has no CDN/Babel, serves compiled `/_next/static`, no console messages. Production = real optimized Next build. ✅
 - Phase 1 done. Next: Phase 2 backend — BLOCKED on a Supabase access token (sbp_...) to run migrations via Management API.
 
+## Session 2 (cont.) — Phase 2 backend deployed
+- Backend dev agent built Phase 2: @supabase/ssr clients + middleware, magic-link auth + /auth/callback, profiles + credit_transactions + spend/add RPCs + signup trigger (3 free credits), real auth/credits services (gen/designs still mock), anon 1-free-trial, gated /api/dev/login + /api/dev/reset. Migration applied via Management API.
+- Verified: tsc/build/lint green; DB has both tables + 3 functions; dev-login on PROD returns real session cookie (tester@roomora.test), bad token 403, reset works.
+- Configured Supabase Auth via Management API: site_url + redirect allowlist (prod + localhost /auth/callback).
+- Committed + pushed (main) + deployed to prod via Vercel CLI. Prod env vars pre-loaded (Supabase x3, FAL_KEY, TEST_USER_EMAILS, ROOMORA_DEV_LOGIN_TOKEN).
+- Phase 2 tester running against prod (focus: credits persist across reload = server-enforced).
+- Dashboard TODO (not blocking): Google OAuth provider not configured (button is placeholder); default Supabase SMTP has rate limits (custom SMTP later for real magic-link volume).
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).

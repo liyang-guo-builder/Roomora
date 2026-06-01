@@ -17,15 +17,20 @@ export function ResultScreen() {
   const currentSaved = useStore((s) => s.currentSaved);
   const setupStyle = useStore((s) => s.setup.style);
 
+  const versions = result?.versions ?? [];
   const [activeV, setActiveV] = useState(0);
-  const variations = Math.max(1, result?.versions.length ?? 1);
+  const variations = Math.max(1, versions.length || 1);
   const styleId = result?.styleId ?? setupStyle ?? "scandi";
   const [en, zh] = STYLE_NAMES[styleId];
   const styleName = t(en, zh);
 
+  const beforeUrl = result?.originalUrl ?? null;
+  const activeVersion = versions[Math.min(activeV, versions.length - 1)];
+  const afterUrl = activeVersion?.resultUrl ?? null;
+
   const actions: [IconName, string, () => void][] = [
     ["heart", t("Save", "保存"), doSave],
-    ["download", t("Download", "下载"), doDownload],
+    ["download", t("Download", "下载"), () => void doDownload(afterUrl)],
     ["share", t("Share", "分享"), () => openModal("share")],
   ];
 
@@ -50,7 +55,12 @@ export function ResultScreen() {
         </button>
       </div>
 
-      <BeforeAfter height={320} watermark={anon || !currentSaved} />
+      <BeforeAfter
+        height={320}
+        watermark={anon || !currentSaved}
+        beforeUrl={beforeUrl}
+        afterUrl={afterUrl}
+      />
 
       {/* variation strip */}
       <div className="mt-5 flex items-center justify-between">
@@ -68,7 +78,16 @@ export function ResultScreen() {
                   : "ring-1 ring-line opacity-80"
               }`}
             >
-              <RoomPhoto variant="after" rounded="rounded-none" tag={false} className="absolute inset-0" />
+              {versions[i]?.resultUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={versions[i].resultUrl!}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <RoomPhoto variant="after" rounded="rounded-none" tag={false} className="absolute inset-0" />
+              )}
             </button>
             <span className={`text-[10px] font-medium ${activeV === i ? "text-sage" : "text-ink-3"}`}>
               {t("v", "版")}

@@ -20,6 +20,7 @@ import {
   paymentService,
   designsService,
   forceNextGenerationFailure,
+  InsufficientCreditsError,
 } from "@/lib/services";
 import type { AuthReason, ModalKind, PayMethod } from "@/lib/types";
 import type { IconName } from "@/components/ui";
@@ -42,7 +43,7 @@ interface FlowContextValue {
   /* mock action handlers */
   doGenerate: () => Promise<void>;
   doSave: () => void;
-  doDownload: () => void;
+  doDownload: (url?: string | null) => void;
   doApplyRefine: (note: string) => Promise<void>;
   onAuthed: (provider: "google" | "email", email?: string) => Promise<void>;
   doPurchase: (packIndex: number, method: PayMethod) => Promise<void>;
@@ -94,8 +95,10 @@ export function FlowProvider({ children }: { children: ReactNode }) {
   const closeModal = useCallback(() => setModal(null), []);
 
   const doGenerate = useCallback(async () => {
+    const roomPhoto = useStore.getState().roomPhoto;
+
     // Anonymous trial: first generation is free (no signup, no server credit).
-    // A second generation requires sign-in.
+    // A second generation requires sign-in. (Server allows anon; client gates.)
     if (anon) {
       if (anonTrialUsed()) {
         openModal("auth", { reason: "free" });
@@ -105,7 +108,7 @@ export function FlowProvider({ children }: { children: ReactNode }) {
       router.push("/generating");
       try {
         const result = await generationService.generate({
-          roomPhoto: null,
+          roomPhoto,
           style: setup.style ?? "scandi",
           note: setup.note,
           budget: setup.budget,
@@ -118,35 +121,33 @@ export function FlowProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Signed in: spend a real server credit (RPC), refund on failure.
+    // Signed in: the SERVER spends the credit (inside /api/generate) and
+    // refunds on failure. Client only mirrors the returned balance.
     if (credits < 1) {
       openModal("buy");
       return;
     }
-    let newBalance: number;
-    try {
-      newBalance = await creditsService.spend(1);
-    } catch {
-      openModal("buy"); // insufficient credits / RPC error
-      return;
-    }
-    setCredits(newBalance);
     router.push("/generating");
     try {
       const result = await generationService.generate({
-        roomPhoto: null,
+        roomPhoto,
         style: setup.style ?? "scandi",
         note: setup.note,
         budget: setup.budget,
       });
+      if (typeof result.balance === "number") setCredits(result.balance);
       setResult(result);
       router.push("/result");
-    } catch {
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        openModal("buy"); // server refused for lack of credits
+        return;
+      }
+      // Server already refunded; reload the authoritative balance.
       try {
-        const refunded = await creditsService.refund(1);
-        setCredits(refunded);
+        setCredits(await creditsService.balance());
       } catch {
-        refund(1); // optimistic local refund if RPC fails
+        refund(1);
       }
       router.push("/error");
     }
@@ -163,13 +164,27 @@ export function FlowProvider({ children }: { children: ReactNode }) {
     showToast(t("Saved to My Designs", "已保存到我的设计"), "heartFill");
   }, [anon, setCurrentSaved, incSaved, setup.style, showToast, t, openModal]);
 
-  const doDownload = useCallback(() => {
-    if (anon) {
-      openModal("auth", { reason: "save" });
-      return;
-    }
-    showToast(t("Downloaded", "已下载"), "download");
-  }, [anon, showToast, t, openModal]);
+  const doDownload = useCallback(
+    (url?: string | null) => {
+      if (anon) {
+        openModal("auth", { reason: "save" });
+        return;
+      }
+      const href = url ?? useStore.getState().result?.versions.at(-1)?.resultUrl ?? null;
+      if (href) {
+        const a = document.createElement("a");
+        a.href = href;
+        a.download = "roomora-design.png";
+        a.target = "_blank";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      showToast(t("Downloaded", "已下载"), "download");
+    },
+    [anon, showToast, t, openModal],
+  );
 
   const doApplyRefine = useCallback(
     async (note: string) => {
@@ -184,26 +199,22 @@ export function FlowProvider({ children }: { children: ReactNode }) {
       }
       const result = useStore.getState().result;
       if (!result) return;
-      let newBalance: number;
-      try {
-        newBalance = await creditsService.spend(1);
-      } catch {
-        openModal("buy");
-        return;
-      }
-      setCredits(newBalance);
       router.push("/generating");
       try {
         const next = await generationService.refine({ result, note });
+        if (typeof next.balance === "number") setCredits(next.balance);
         // append only the newest version onto current store result
         const newest = next.versions[next.versions.length - 1];
         setResult(result);
         appendVersion(newest);
         router.push("/result");
-      } catch {
+      } catch (err) {
+        if (err instanceof InsufficientCreditsError) {
+          openModal("buy");
+          return;
+        }
         try {
-          const refunded = await creditsService.refund(1);
-          setCredits(refunded);
+          setCredits(await creditsService.balance());
         } catch {
           refund(1);
         }

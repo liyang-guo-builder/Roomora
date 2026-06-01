@@ -67,7 +67,7 @@ export function forceNextGenerationFailure() {
 }
 
 export const generationService: GenerationService = {
-  async generate(input: GenerateInput): Promise<GenerationResult> {
+  async generate(input: GenerateInput): Promise<GenerationResult & { balance: number | null }> {
     await wait(GEN_LATENCY_MS);
     if (failNext || Math.random() < GEN_FAIL_RATE) {
       failNext = false;
@@ -82,10 +82,11 @@ export const generationService: GenerationService = {
       jobId: uid(),
       styleId: input.style,
       versions: [original],
+      balance: null,
     };
   },
 
-  async refine(input: RefineInput): Promise<GenerationResult> {
+  async refine(input: RefineInput): Promise<GenerationResult & { balance: number | null }> {
     await wait(GEN_LATENCY_MS);
     const next: GenerationVersion = {
       id: uid(),
@@ -95,6 +96,7 @@ export const generationService: GenerationService = {
     return {
       ...input.result,
       versions: [...input.result.versions, next],
+      balance: null,
     };
   },
 };

@@ -5,17 +5,22 @@ import { useT } from "@/lib/i18n";
 import { RoomPhoto } from "./RoomPhoto";
 import { Icon } from "./Icon";
 
-/** Real interactive Before/After comparison slider. Pointer + touch. */
+/** Real interactive Before/After comparison slider. Pointer + touch.
+ *  Pass beforeUrl/afterUrl to show real images; falls back to tonal placeholders. */
 export function BeforeAfter({
   height = 300,
   label,
   watermark,
   className = "",
+  beforeUrl,
+  afterUrl,
 }: {
   height?: number;
   label?: string;
   watermark?: boolean;
   className?: string;
+  beforeUrl?: string | null;
+  afterUrl?: string | null;
 }) {
   const { t } = useT();
   const [pos, setPos] = useState(54);
@@ -69,17 +74,32 @@ export function BeforeAfter({
       style={{ height }}
     >
       {/* AFTER (base, right side) */}
-      <RoomPhoto
-        variant="after"
-        rounded="rounded-none"
-        tag={false}
-        className="absolute inset-0 w-full h-full"
-        label={label}
-      />
+      {afterUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={afterUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      ) : (
+        <RoomPhoto
+          variant="after"
+          rounded="rounded-none"
+          tag={false}
+          className="absolute inset-0 w-full h-full"
+          label={label}
+        />
+      )}
       {/* BEFORE (clipped from left to pos) */}
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
         <div style={{ width: baseW || "100vw", height: "100%" }}>
-          <RoomPhoto variant="before" rounded="rounded-none" tag={false} className="w-full h-full" />
+          {beforeUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={beforeUrl}
+              alt=""
+              className="w-full h-full object-cover"
+              style={{ width: baseW || "100vw", height: "100%" }}
+            />
+          ) : (
+            <RoomPhoto variant="before" rounded="rounded-none" tag={false} className="w-full h-full" />
+          )}
         </div>
       </div>
 

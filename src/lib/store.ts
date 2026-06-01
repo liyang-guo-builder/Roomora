@@ -30,6 +30,8 @@ interface RoomoraState {
 
   /* ── transient per-flow state (not persisted) ── */
   hasPhoto: boolean;
+  /** The user's chosen room photo as a data URI (Phase 3). */
+  roomPhoto: string | null;
   setup: SetupState;
   result: GenerationResult | null;
   /** Real Supabase session user; null when signed out. */
@@ -47,6 +49,7 @@ interface RoomoraState {
   incSaved: () => void;
 
   setHasPhoto: (v: boolean) => void;
+  setRoomPhoto: (uri: string | null) => void;
   setSetup: (s: SetupState) => void;
   setResult: (r: GenerationResult | null) => void;
   appendVersion: (v: GenerationVersion) => void;
@@ -64,6 +67,7 @@ export const useStore = create<RoomoraState>()(
       saved: 3,
 
       hasPhoto: false,
+      roomPhoto: null,
       setup: DEFAULT_SETUP,
       result: null,
       user: null,
@@ -78,6 +82,7 @@ export const useStore = create<RoomoraState>()(
       incSaved: () => set({ saved: get().saved + 1 }),
 
       setHasPhoto: (hasPhoto) => set({ hasPhoto }),
+      setRoomPhoto: (roomPhoto) => set({ roomPhoto, hasPhoto: !!roomPhoto }),
       setSetup: (setup) => set({ setup }),
       setResult: (result) => set({ result, currentSaved: false }),
       appendVersion: (v) => {
@@ -91,6 +96,7 @@ export const useStore = create<RoomoraState>()(
       resetFlow: () =>
         set({
           hasPhoto: false,
+          roomPhoto: null,
           setup: DEFAULT_SETUP,
           result: null,
           currentSaved: false,

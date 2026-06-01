@@ -14,6 +14,7 @@ export function RefineScreen() {
   const { doApplyRefine } = useFlow();
   const result = useStore((s) => s.result);
   const history = result?.versions ?? [];
+  const latestUrl = history.at(-1)?.resultUrl ?? null;
 
   const [text, setText] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
@@ -29,7 +30,16 @@ export function RefineScreen() {
   return (
     <div className="px-5 pt-3 pb-32">
       <div className="flex items-center gap-3">
-        <RoomPhoto variant="after" rounded="rounded-2xl" tag={false} className="w-20 h-20 shrink-0 shadow-card" />
+        {latestUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={latestUrl}
+            alt=""
+            className="w-20 h-20 shrink-0 rounded-2xl object-cover shadow-card"
+          />
+        ) : (
+          <RoomPhoto variant="after" rounded="rounded-2xl" tag={false} className="w-20 h-20 shrink-0 shadow-card" />
+        )}
         <div>
           <div className="text-[11px] font-mono uppercase tracking-wider text-ink-3">
             {t("refining", "微调中")}
@@ -55,7 +65,12 @@ export function RefineScreen() {
                       : "ring-1 ring-line opacity-75"
                   }`}
                 >
-                  <RoomPhoto variant="after" rounded="rounded-none" tag={false} className="absolute inset-0" />
+                  {h.resultUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={h.resultUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <RoomPhoto variant="after" rounded="rounded-none" tag={false} className="absolute inset-0" />
+                  )}
                 </button>
                 <span className="text-[10px] text-ink-3">{i === 0 ? t("original", "原始") : `v${i + 1}`}</span>
               </div>

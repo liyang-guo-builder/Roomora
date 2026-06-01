@@ -1,17 +1,25 @@
 "use client";
 
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
+import { readImageFile } from "@/lib/readImageFile";
 import { Icon, RoomPhoto, type IconName } from "@/components/ui";
 
 export function LandingScreen() {
   const { t } = useT();
   const router = useRouter();
-  const setHasPhoto = useStore((s) => s.setHasPhoto);
+  const setRoomPhoto = useStore((s) => s.setRoomPhoto);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const startSetup = () => {
-    setHasPhoto(true);
+  const openPicker = () => fileRef.current?.click();
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const uri = await readImageFile(file);
+    setRoomPhoto(uri);
     router.push("/setup");
   };
 
@@ -41,8 +49,16 @@ export function LandingScreen() {
       </p>
 
       {/* dropzone */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={onFile}
+        className="hidden"
+      />
       <button
-        onClick={startSetup}
+        onClick={openPicker}
         className="mt-6 w-full rounded-[22px] border-2 border-dashed border-sage/45 bg-sage-tint/50 hover:bg-sage-tint transition-colors p-7 flex flex-col items-center text-center active:scale-[.99]"
       >
         <div className="w-16 h-16 rounded-2xl bg-sage text-paper flex items-center justify-center shadow-[0_10px_24px_-8px_rgba(124,136,102,.9)] mb-4">
