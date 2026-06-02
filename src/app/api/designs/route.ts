@@ -98,3 +98,45 @@ export async function GET() {
 
   return NextResponse.json(designs);
 }
+
+/**
+ * DELETE /api/designs  { generationId }
+ * Removes a design from the user's saved list (sets saved=false). Only the
+ * owner's own row can be unsaved; the generation itself is kept.
+ */
+export async function DELETE(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  let body: SaveBody;
+  try {
+    body = (await request.json()) as SaveBody;
+  } catch {
+    return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  }
+  const generationId = body.generationId;
+  if (!generationId) {
+    return NextResponse.json({ error: "missing_generation_id" }, { status: 400 });
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("generations")
+    .update({ saved: false })
+    .eq("id", generationId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return NextResponse.json(
+      { error: "unsave_failed", detail: error.message },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({ ok: true });
+}

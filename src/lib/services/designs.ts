@@ -29,4 +29,16 @@ export const designsService: DesignsService = {
       throw new Error((detail as { error?: string }).error ?? "save_failed");
     }
   },
+
+  async unsave(generationId: string): Promise<void> {
+    const res = await fetch("/api/designs", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ generationId }),
+    });
+    if (!res.ok) {
+      const detail = await res.json().catch(() => ({}));
+      throw new Error((detail as { error?: string }).error ?? "unsave_failed");
+    }
+  },
 };

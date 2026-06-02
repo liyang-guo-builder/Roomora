@@ -13,9 +13,14 @@ export function GeneratingScreen() {
   const [en, zh] = STYLE_NAMES[styleId] ?? STYLE_NAMES.scandi;
 
   const [i, setI] = useState(0);
+  const [step, setStep] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setI((x) => (x + 1) % GEN_MSGS.length), 2200);
-    return () => clearInterval(id);
+    const id2 = setInterval(() => setStep((s) => Math.min(3, s + 1)), 3500);
+    return () => {
+      clearInterval(id);
+      clearInterval(id2);
+    };
   }, []);
 
   return (
@@ -62,20 +67,25 @@ export function GeneratingScreen() {
         {t("Your walls, doors and layout stay exactly as they are", "墙面、门窗与格局保持原样")}
       </div>
 
-      {/* step skeletons */}
-      <div className="mt-7 grid grid-cols-4 gap-2.5">
+      {/* step progress */}
+      <div className="mt-7 flex items-end gap-2">
         {[
           t("Layout", "格局"),
           t("Furniture", "家具"),
           t("Lighting", "灯光"),
           t("Details", "细节"),
         ].map((labelText, n) => (
-          <div key={labelText} className="flex flex-col items-center gap-1.5">
-            <div
-              className={`aspect-square w-full rounded-xl bg-surface-sunk ${n <= i % 4 ? "" : "animate-pulse"}`}
-              style={{ animationDelay: `${n * 0.15}s` }}
-            />
-            <span className="text-[10px] text-ink-3">{labelText}</span>
+          <div key={labelText} className="flex-1 flex flex-col items-center gap-1.5">
+            <div className="w-full h-1.5 rounded-full bg-surface-sunk overflow-hidden">
+              <div
+                className={`h-full rounded-full bg-sage transition-[width] duration-700 ${
+                  n < step ? "w-full" : n === step ? "w-2/3 animate-pulse" : "w-0"
+                }`}
+              />
+            </div>
+            <span className={`text-[10.5px] ${n <= step ? "text-ink-2 font-medium" : "text-ink-3"}`}>
+              {labelText}
+            </span>
           </div>
         ))}
       </div>

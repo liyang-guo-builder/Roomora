@@ -75,7 +75,9 @@ export function ResultScreen() {
       {/* variation strip */}
       <div className="mt-5 flex items-center justify-between">
         <span className="text-[13px] font-semibold text-ink">{t("Variations", "设计版本")}</span>
-        <span className="text-[11.5px] text-ink-3">{t("Tap to switch", "点击切换")}</span>
+        <span className="text-[11.5px] text-ink-3">
+          {versions.length > 1 ? t("Tap to switch", "点击切换") : t("Refine to add more", "微调可生成更多")}
+        </span>
       </div>
       <div className="mt-2 flex items-start gap-4 overflow-x-auto pt-1 pb-1 -mx-1 px-1.5">
         {Array.from({ length: variations }).map((_, i) => (

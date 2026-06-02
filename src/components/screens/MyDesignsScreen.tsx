@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { designsService } from "@/lib/services";
@@ -34,6 +34,12 @@ export function MyDesignsScreen() {
 
   const designs: SavedDesign[] = anon ? [] : data ?? [];
   const empty = !isLoading && designs.length === 0;
+
+  const queryClient = useQueryClient();
+  const remove = async (id: string) => {
+    await designsService.unsave(id).catch(() => {});
+    queryClient.invalidateQueries({ queryKey: ["designs"] });
+  };
 
   // Reopen a saved design in the Result screen.
   const open = (d: SavedDesign) => {
@@ -89,11 +95,11 @@ export function MyDesignsScreen() {
               </div>
             ))
           : designs.map((d) => (
-              <button
-                key={d.id}
-                onClick={() => open(d)}
-                className="text-left active:scale-[.98] transition-transform"
-              >
+              <div key={d.id} className="relative">
+                <button
+                  onClick={() => open(d)}
+                  className="block w-full text-left active:scale-[.98] transition-transform"
+                >
                 <div className="relative aspect-[4/5] rounded-[16px] overflow-hidden shadow-card ring-1 ring-line">
                   {/* AFTER (base) */}
                   {d.resultUrl ? (
@@ -128,7 +134,15 @@ export function MyDesignsScreen() {
                   </div>
                   <div className="text-[11.5px] text-ink-3">{t("Paris 14e", "巴黎 14 区")}</div>
                 </div>
-              </button>
+                </button>
+                <button
+                  onClick={() => remove(d.id)}
+                  aria-label={t("Delete", "删除")}
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 text-white backdrop-blur-sm flex items-center justify-center active:scale-90 hover:bg-black/60 transition"
+                >
+                  <Icon name="x" size={15} />
+                </button>
+              </div>
             ))}
       </div>
     </div>

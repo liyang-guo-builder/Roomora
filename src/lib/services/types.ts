@@ -77,4 +77,6 @@ export interface DesignsService {
   list(): Promise<SavedDesign[]>;
   /** Flag a persisted generation as saved. Resolves on success. */
   save(generationId: string): Promise<void>;
+  /** Remove a design from the user's saved list (unflag). */
+  unsave(generationId: string): Promise<void>;
 }

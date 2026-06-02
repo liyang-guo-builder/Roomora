@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { readImageFile } from "@/lib/readImageFile";
-import { Icon, type IconName } from "@/components/ui";
+import { Icon } from "@/components/ui";
 import { BeforeAfter } from "@/components/ui/BeforeAfter";
 
 const EXAMPLES = [
@@ -30,12 +30,6 @@ export function LandingScreen() {
     setRoomPhoto(uri);
     router.push("/setup");
   };
-
-  const trust: [IconName, string][] = [
-    ["home", t("Your layout", "保留格局")],
-    ["eye", t("You preview", "先看后定")],
-    ["heart", t("Free to try", "免费试用")],
-  ];
 
   return (
     <div className="px-5 pb-8 pt-3">
@@ -113,17 +107,6 @@ export function LandingScreen() {
         />
       </div>
 
-      {/* trust row */}
-      <div className="mt-7 grid grid-cols-3 gap-3 text-center">
-        {trust.map(([ic, lab]) => (
-          <div key={lab} className="flex flex-col items-center gap-1.5">
-            <div className="w-9 h-9 rounded-full bg-surface border border-line flex items-center justify-center text-sage">
-              <Icon name={ic} size={18} />
-            </div>
-            <span className="text-[11.5px] text-ink-2 leading-tight">{lab}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
