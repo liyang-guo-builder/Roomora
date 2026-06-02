@@ -16,6 +16,12 @@ export function ResultScreen() {
   const anon = useStore((s) => s.anon);
   const currentSaved = useStore((s) => s.currentSaved);
   const setupStyle = useStore((s) => s.setup.style);
+  const resetFlow = useStore((s) => s.resetFlow);
+
+  const startNewRoom = () => {
+    resetFlow();
+    router.push("/");
+  };
 
   const versions = result?.versions ?? [];
   const [activeV, setActiveV] = useState(0);
@@ -29,7 +35,11 @@ export function ResultScreen() {
   const afterUrl = activeVersion?.resultUrl ?? null;
 
   const actions: [IconName, string, () => void][] = [
-    ["heart", t("Save", "保存"), doSave],
+    [
+      currentSaved ? "heartFill" : "heart",
+      currentSaved ? t("Saved", "已保存") : t("Save", "保存"),
+      doSave,
+    ],
     ["download", t("Download", "下载"), () => void doDownload(afterUrl)],
     ["share", t("Share", "分享"), () => openModal("share")],
   ];
@@ -120,6 +130,14 @@ export function ResultScreen() {
       <Btn variant="brass" size="lg" full icon="wand" className="mt-3" onClick={() => router.push("/refine")}>
         {t("Refine this design", "继续微调")}
       </Btn>
+
+      <button
+        onClick={startNewRoom}
+        className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 text-[13.5px] font-medium text-ink-2 hover:text-sage transition-colors active:scale-[.99]"
+      >
+        <Icon name="camera" size={16} />
+        {t("Try another room", "换一个房间")}
+      </button>
 
       <div className="mt-4 flex items-start gap-2 text-[12px] text-ink-2 bg-sage-tint/50 rounded-xl px-3 py-2.5">
         <Icon name="lock" size={15} className="text-sage mt-px shrink-0" />
