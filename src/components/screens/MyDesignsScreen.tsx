@@ -61,8 +61,8 @@ export function MyDesignsScreen() {
         <h2 className="text-[19px] font-semibold text-ink">{t("No saved designs yet", "还没有保存的设计")}</h2>
         <p className="mt-2 text-[14px] text-ink-2 max-w-[30ch]">
           {t(
-            "Restyle a room and tap save — it’ll live here for you to revisit.",
-            "设计一个房间并点击保存 —— 它会出现在这里随时查看。",
+            "Restyle a room and tap save. It’ll live here for you to revisit.",
+            "设计一个房间并点击保存，它会出现在这里随时查看。",
           )}
         </p>
         <Btn variant="primary" size="lg" icon="camera" className="mt-6" onClick={() => router.push("/")}>

@@ -120,14 +120,14 @@ export function SetupScreen() {
             </div>
             <div className="text-[12.5px] text-ink-2 mt-1 max-w-[30ch]">
               {t(
-                "A room you love from Pinterest, 小红书 or a magazine — we’ll bring its look into your space.",
-                "来自 Pinterest、小红书或杂志的房间 —— 我们会把它的风格带入你的空间。",
+                "A room you love from Pinterest, 小红书 or a magazine. We’ll bring its look into your space.",
+                "来自 Pinterest、小红书或杂志的房间，我们会把它的风格带入你的空间。",
               )}
             </div>
           </button>
           <div className="mt-3 flex items-center gap-2 text-[12px] text-brass bg-brass-tint/60 rounded-xl px-3 py-2.5">
             <Icon name="sparkle" size={15} />{" "}
-            {t("Coming soon — designed and ready to ship.", "即将推出 —— 设计已就绪。")}
+            {t("Coming soon. Designed and ready to ship.", "即将推出，设计已就绪。")}
           </div>
         </div>
       )}

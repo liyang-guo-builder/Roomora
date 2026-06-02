@@ -46,7 +46,7 @@ export function RefineScreen() {
           </div>
           <h2 className="text-[18px] font-semibold text-ink">{t("Tell me what to change", "告诉我要改什么")}</h2>
           <p className="text-[12.5px] text-ink-2">
-            {t("I’ll change only that — nothing else moves.", "我只会改这一处，其余不动。")}
+            {t("I’ll change only that. Nothing else moves.", "我只会改这一处，其余不动。")}
           </p>
         </div>
       </div>

@@ -17,8 +17,8 @@ export function ErrorScreen() {
       <h2 className="text-[20px] font-semibold text-ink">{t("That didn’t come out right", "这次没有生成成功")}</h2>
       <p className="mt-2 text-[14px] text-ink-2 max-w-[32ch]">
         {t(
-          "Something went wrong on our side — so we’ve put your credit back. Let’s try that again.",
-          "是我们这边出了点问题 —— 积分已退回。我们再试一次。",
+          "Something went wrong on our side, so we’ve put your credit back. Let’s try that again.",
+          "是我们这边出了点问题，积分已退回。我们再试一次。",
         )}
       </p>
       <div className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-sage bg-sage-tint px-3 py-1.5 rounded-full">

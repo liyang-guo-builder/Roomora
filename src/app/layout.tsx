@@ -17,7 +17,7 @@ const notoSC = Noto_Sans_SC({
 });
 
 export const metadata: Metadata = {
-  title: "Roomora — Redesign your real room",
+  title: "Roomora · Redesign your real room",
   description:
     "Turn a photo of your real room into a realistically restyled version that stays recognizably your room.",
 };

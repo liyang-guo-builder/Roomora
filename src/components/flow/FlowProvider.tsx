@@ -184,7 +184,7 @@ export function FlowProvider({ children }: { children: ReactNode }) {
     } catch {
       // Roll back optimistic state on failure.
       setCurrentSaved(false);
-      showToast(t("Couldn’t save — try again", "保存失败，请重试"), "info");
+      showToast(t("Couldn’t save, try again", "保存失败，请重试"), "info");
     }
   }, [anon, setCurrentSaved, incSaved, showToast, t, openModal]);
 
@@ -288,7 +288,7 @@ export function FlowProvider({ children }: { children: ReactNode }) {
           // /auth/callback, which onAuthStateChange picks up.
           showToast(t("Check your email for a magic link", "请查收登录链接"), "mail");
         } catch {
-          showToast(t("Couldn’t send the link — try again", "发送失败，请重试"), "info");
+          showToast(t("Couldn’t send the link, try again", "发送失败，请重试"), "info");
         }
         return;
       }

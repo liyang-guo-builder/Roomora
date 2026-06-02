@@ -51,8 +51,8 @@ export function LandingScreen() {
       </h1>
       <p className="mt-3 text-[15px] leading-relaxed text-ink-2 max-w-[34ch]">
         {t(
-          "Same walls, windows and light — restyled into the look you love. You control what changes.",
-          "相同的墙面、窗户与光线 —— 焕新成你向往的风格。一切由你掌控。",
+          "Same walls, windows and light, restyled into the look you love. You control what changes.",
+          "相同的墙面、窗户与光线，焕新成你向往的风格。一切由你掌控。",
         )}
       </p>
 

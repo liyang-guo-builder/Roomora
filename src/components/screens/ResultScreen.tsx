@@ -142,8 +142,8 @@ export function ResultScreen() {
       <div className="mt-4 flex items-start gap-2 text-[12px] text-ink-2 bg-sage-tint/50 rounded-xl px-3 py-2.5">
         <Icon name="lock" size={15} className="text-sage mt-px shrink-0" />
         {t(
-          "This is still your room — same walls, windows and proportions. Only the styling changed.",
-          "这依然是你的房间 —— 墙面、窗户和比例不变，只改变了风格。",
+          "This is still your room: same walls, windows and proportions. Only the styling changed.",
+          "这依然是你的房间，墙面、窗户和比例不变，只改变了风格。",
         )}
       </div>
     </div>

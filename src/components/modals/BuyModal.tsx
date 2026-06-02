@@ -36,7 +36,7 @@ export function BuyModal({ forceOut }: { forceOut: boolean }) {
       {out && (
         <div className="flex items-center gap-2 text-[12.5px] text-danger bg-danger-tint rounded-xl px-3 py-2.5 mb-3 -mt-1">
           <Icon name="info" size={15} />{" "}
-          {t("You’re out of credits — top up to keep designing.", "积分已用完 —— 充值即可继续设计。")}
+          {t("You’re out of credits. Top up to keep designing.", "积分已用完，充值即可继续设计。")}
         </div>
       )}
       <div className="flex flex-col gap-2.5">
