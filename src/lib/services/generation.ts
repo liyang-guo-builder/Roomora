@@ -54,6 +54,7 @@ export const generationService: GenerationService = {
       styleId: input.style,
       originalUrl: data.originalUrl,
       versions: [version],
+      generationId: data.generationId,
       balance: data.balance,
     };
     return result;
@@ -79,6 +80,8 @@ export const generationService: GenerationService = {
       ...input.result,
       originalUrl: input.result.originalUrl ?? data.originalUrl,
       versions: [...versions, next],
+      // Latest version is what Save flags; track its persisted id.
+      generationId: data.generationId,
       balance: data.balance,
     };
     return result;

@@ -11,9 +11,8 @@ import type {
   RefineInput,
   PaymentService,
   PurchaseResult,
-  DesignsService,
 } from "./types";
-import type { GenerationResult, GenerationVersion, CreditPack, SavedDesign } from "../types";
+import type { GenerationResult, GenerationVersion, CreditPack } from "../types";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const uid = () =>
@@ -114,26 +113,5 @@ export const paymentService: PaymentService = {
     await wait(300);
     const pack = PACKS[packIndex] ?? PACKS[0];
     return { added: pack.c };
-  },
-};
-
-/* ── designs ── */
-const SEED_DESIGNS: SavedDesign[] = [
-  { id: uid(), styleId: "scandi", location: "Paris 14e" },
-  { id: uid(), styleId: "cream", location: "Paris 14e" },
-  { id: uid(), styleId: "japandi", location: "Paris 14e" },
-  { id: uid(), styleId: "wood", location: "Paris 14e" },
-  { id: uid(), styleId: "boho", location: "Paris 14e" },
-  { id: uid(), styleId: "modern", location: "Paris 14e" },
-];
-
-export const designsService: DesignsService = {
-  async list(): Promise<SavedDesign[]> {
-    await wait(150);
-    return SEED_DESIGNS;
-  },
-  async save(design): Promise<SavedDesign> {
-    await wait(150);
-    return { ...design, id: uid() };
   },
 };

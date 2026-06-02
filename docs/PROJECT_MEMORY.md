@@ -47,6 +47,14 @@ Session log. Append at the end of every session.
 - tsc/build/lint green. Committed + pushed (main) + deployed to prod. Phase 3 tester running against prod (upload real photo → furnished same-room restyle → refine → credits).
 - Known TODO: anonymous free-trial is client-gated only (server-side hardening commented in /api/generate); radiator-under-window sometimes added (minor, acceptable).
 
+## Session 2 (cont.) — UX fixes from user testing
+- **Loosened anon trial to 3 free designs** (counter in store, consumed only on SUCCESS; refine counts too). Pill shows "N free" for anon instead of misleading credits.
+- **Fixed large-photo failure** (root cause: 6MB "Test image 2" base64 > Vercel ~4.5MB body limit → /api/generate failed → error screen). `readImageFile` now downscales to ≤1536px JPEG q0.85 client-side (also honors EXIF orientation). Verified: 6MB photo → real Scandinavian restyle, ~21s, no errors, "2 free".
+- **Generating screen** now shows the user's actual photo (dimmed + shimmer) with constructive copy ("Designing your {style} room", step labels Layout/Furniture/Lighting/Details, "~10-20s").
+- **Landing proof** now interactive: style toggle chips (Scandinavian/Japandi/Bohemian) + one large draggable BeforeAfter slider (was 3 static near-identical tiles).
+- Style tiles + landing examples use real generated imagery (flux style tiles in /public/styles, qwen real-room before/afters in /public/examples).
+- homedesigns.ai competitor research agent was running (may have completed) — pending review.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).

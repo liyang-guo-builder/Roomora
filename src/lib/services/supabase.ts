@@ -35,7 +35,26 @@ export const authService: AuthService = {
       return { userId: "", email, grantedCredits: 0 };
     }
 
-    // Google / WeChat OAuth not configured yet — UI keeps these as placeholders.
+    if (provider === "google") {
+      // OAuth redirect flow: Supabase sends the user to Google, then back to
+      // /auth/callback which exchanges the code for a session. New users get
+      // +3 credits via the signup trigger. (Requires the Google provider to be
+      // configured in Supabase with a client id/secret.)
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo:
+            typeof window !== "undefined"
+              ? `${window.location.origin}/auth/callback`
+              : undefined,
+        },
+      });
+      if (error) throw error;
+      // The browser navigates away; no session is returned synchronously.
+      return { userId: "", email: null, grantedCredits: 0 };
+    }
+
+    // WeChat OAuth not configured yet — UI keeps it as a placeholder.
     throw new Error("provider_not_configured");
   },
 

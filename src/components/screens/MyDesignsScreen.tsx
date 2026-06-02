@@ -1,26 +1,56 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
+import { designsService } from "@/lib/services";
 import { Btn, Icon, RoomPhoto } from "@/components/ui";
-import type { StyleId } from "@/lib/types";
+import { STYLE_NAMES } from "@/lib/constants";
+import type { SavedDesign, StyleId, GenerationResult } from "@/lib/types";
 
-const ITEMS: [StyleId, string, string][] = [
-  ["scandi", "Scandinavian", "北欧风"],
-  ["cream", "Cream", "奶油风"],
-  ["japandi", "Japandi", "日式简约"],
-  ["wood", "Natural Wood", "原木风"],
-  ["boho", "Bohemian", "波西米亚"],
-  ["modern", "Modern", "现代简约"],
-];
+/** Map a stored style string back to a display name (falls back gracefully). */
+function styleName(style: string | null, t: (en: string, zh: string) => string): string {
+  if (style && style in STYLE_NAMES) {
+    const [en, zh] = STYLE_NAMES[style as StyleId];
+    return t(en, zh);
+  }
+  return t("Restyled", "焕新设计");
+}
 
 export function MyDesignsScreen() {
   const { t } = useT();
   const router = useRouter();
-  // Empty state when the user has saved nothing in this session AND no seed.
-  const saved = useStore((s) => s.saved);
-  const empty = saved <= 0;
+  const anon = useStore((s) => s.anon);
+  const setResult = useStore((s) => s.setResult);
+  const setCurrentSaved = useStore((s) => s.setCurrentSaved);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["designs", anon],
+    queryFn: () => designsService.list(),
+    // No saved designs for signed-out users; skip the call.
+    enabled: !anon,
+  });
+
+  const designs: SavedDesign[] = anon ? [] : data ?? [];
+  const empty = !isLoading && designs.length === 0;
+
+  // Reopen a saved design in the Result screen.
+  const open = (d: SavedDesign) => {
+    const result: GenerationResult = {
+      jobId: d.id,
+      styleId: (d.style && d.style in STYLE_NAMES ? d.style : "scandi") as StyleId,
+      originalUrl: d.originalUrl,
+      generationId: d.id,
+      versions: [
+        { id: d.id, variant: "after", refineNote: null, resultUrl: d.resultUrl },
+      ],
+    };
+    setResult(result);
+    // Already saved — reflect the filled heart immediately (setResult cleared it).
+    setCurrentSaved(true);
+    router.push("/result");
+  };
 
   if (empty) {
     return (
@@ -47,29 +77,59 @@ export function MyDesignsScreen() {
       <div className="flex items-baseline justify-between">
         <h2 className="text-[20px] font-semibold text-ink">{t("My designs", "我的设计")}</h2>
         <span className="text-[13px] text-ink-3">
-          {ITEMS.length} {t("saved", "已保存")}
+          {isLoading ? "…" : designs.length} {t("saved", "已保存")}
         </span>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3">
-        {ITEMS.map(([, en, zh], i) => (
-          <button
-            key={i}
-            onClick={() => router.push("/result")}
-            className="text-left active:scale-[.98] transition-transform"
-          >
-            <div className="relative aspect-[4/5] rounded-[16px] overflow-hidden shadow-card ring-1 ring-line">
-              <RoomPhoto variant="after" rounded="rounded-none" tag={false} className="absolute inset-0" />
-              <div className="absolute inset-0 overflow-hidden" style={{ width: "44%" }}>
-                <RoomPhoto variant="before" rounded="rounded-none" tag={false} className="h-full" />
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="aspect-[4/5] rounded-[16px] bg-surface-sunk ring-1 ring-line" />
+                <div className="mt-1.5 h-3.5 w-2/3 rounded bg-surface-sunk" />
               </div>
-              <div className="absolute top-0 bottom-0 left-[44%] w-[2px] bg-white/80" />
-            </div>
-            <div className="mt-1.5 px-0.5">
-              <div className="text-[13.5px] font-semibold text-ink leading-tight">{t(en, zh)}</div>
-              <div className="text-[11.5px] text-ink-3">{t("Paris 14e", "巴黎 14 区")}</div>
-            </div>
-          </button>
-        ))}
+            ))
+          : designs.map((d) => (
+              <button
+                key={d.id}
+                onClick={() => open(d)}
+                className="text-left active:scale-[.98] transition-transform"
+              >
+                <div className="relative aspect-[4/5] rounded-[16px] overflow-hidden shadow-card ring-1 ring-line">
+                  {/* AFTER (base) */}
+                  {d.resultUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={d.resultUrl}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <RoomPhoto variant="after" rounded="rounded-none" tag={false} className="absolute inset-0" />
+                  )}
+                  {/* BEFORE (clipped left strip) */}
+                  <div className="absolute inset-0 overflow-hidden" style={{ width: "44%" }}>
+                    {d.originalUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={d.originalUrl}
+                        alt=""
+                        className="h-full object-cover"
+                        style={{ width: "227%", maxWidth: "none" }}
+                      />
+                    ) : (
+                      <RoomPhoto variant="before" rounded="rounded-none" tag={false} className="h-full" />
+                    )}
+                  </div>
+                  <div className="absolute top-0 bottom-0 left-[44%] w-[2px] bg-white/80" />
+                </div>
+                <div className="mt-1.5 px-0.5">
+                  <div className="text-[13.5px] font-semibold text-ink leading-tight">
+                    {styleName(d.style, t)}
+                  </div>
+                  <div className="text-[11.5px] text-ink-3">{t("Paris 14e", "巴黎 14 区")}</div>
+                </div>
+              </button>
+            ))}
       </div>
     </div>
   );

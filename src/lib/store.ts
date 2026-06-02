@@ -97,7 +97,10 @@ export const useStore = create<RoomoraState>()(
       appendVersion: (v) => {
         const r = get().result;
         if (!r) return;
-        set({ result: { ...r, versions: [...r.versions, v] } });
+        // The appended version is now the latest, so it becomes what Save flags.
+        set({
+          result: { ...r, versions: [...r.versions, v], generationId: v.id },
+        });
       },
       setUser: (user) => set({ user, anon: !user }),
       setAnon: (anon) => set({ anon }),

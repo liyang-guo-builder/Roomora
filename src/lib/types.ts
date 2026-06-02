@@ -44,6 +44,11 @@ export interface GenerationResult {
   versions: GenerationVersion[];
   /** Public URL of the user's real uploaded room photo (the "before"). */
   originalUrl?: string | null;
+  /**
+   * Id of the persisted `generations` row for the current (latest) version.
+   * This is what Save flags. Mirrors the latest version's id from the server.
+   */
+  generationId?: string | null;
 }
 
 export interface CreditPack {
@@ -53,10 +58,14 @@ export interface CreditPack {
   best?: boolean;
 }
 
+/** A saved design returned by GET /api/designs (a flagged `generations` row). */
 export interface SavedDesign {
   id: string;
-  styleId: StyleId;
-  location: string;
+  resultUrl: string | null;
+  originalUrl: string | null;
+  /** Style id as stored (string; may be null on legacy rows). */
+  style: string | null;
+  createdAt: string;
 }
 
 export type PayMethod = "card" | "wechat";

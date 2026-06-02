@@ -41,7 +41,7 @@ interface FlowContextValue {
 
   /* mock action handlers */
   doGenerate: () => Promise<void>;
-  doSave: () => void;
+  doSave: () => Promise<void>;
   doDownload: (url?: string | null) => void;
   doApplyRefine: (note: string) => Promise<void>;
   onAuthed: (provider: "google" | "email", email?: string) => Promise<void>;
@@ -165,16 +165,28 @@ export function FlowProvider({ children }: { children: ReactNode }) {
     openModal,
   ]);
 
-  const doSave = useCallback(() => {
+  const doSave = useCallback(async () => {
     if (anon) {
       openModal("auth", { reason: "save" });
       return;
     }
+    const generationId = useStore.getState().result?.generationId;
+    if (!generationId) {
+      showToast(t("Nothing to save yet", "暂无可保存的设计"), "info");
+      return;
+    }
+    // Optimistic UI: flip the heart + counter, then persist server-side.
     setCurrentSaved(true);
     incSaved();
-    void designsService.save({ styleId: setup.style ?? "scandi", location: "Paris 14e" });
-    showToast(t("Saved to My Designs", "已保存到我的设计"), "heartFill");
-  }, [anon, setCurrentSaved, incSaved, setup.style, showToast, t, openModal]);
+    try {
+      await designsService.save(generationId);
+      showToast(t("Saved to My Designs", "已保存到我的设计"), "heartFill");
+    } catch {
+      // Roll back optimistic state on failure.
+      setCurrentSaved(false);
+      showToast(t("Couldn’t save — try again", "保存失败，请重试"), "info");
+    }
+  }, [anon, setCurrentSaved, incSaved, showToast, t, openModal]);
 
   const doDownload = useCallback(
     (url?: string | null) => {
@@ -280,8 +292,18 @@ export function FlowProvider({ children }: { children: ReactNode }) {
         }
         return;
       }
-      // Google OAuth not configured yet — keep as a designed placeholder.
-      showToast(t("Google sign-in coming soon", "Google 登录即将上线"), "info");
+      // Google OAuth: redirect to Google → back to /auth/callback (which
+      // exchanges the code). New users get +3 credits via the signup trigger.
+      // Won't complete until the Supabase Google provider is configured.
+      try {
+        await authService.signIn("google");
+        // The browser navigates away on success; nothing more to do here.
+      } catch {
+        showToast(
+          t("Google sign-in isn’t available yet", "Google 登录暂不可用"),
+          "info",
+        );
+      }
     },
     [closeModal, showToast, t],
   );

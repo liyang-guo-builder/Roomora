@@ -73,6 +73,8 @@ export interface PaymentService {
 }
 
 export interface DesignsService {
+  /** The current user's saved designs, newest first. */
   list(): Promise<SavedDesign[]>;
-  save(design: Omit<SavedDesign, "id">): Promise<SavedDesign>;
+  /** Flag a persisted generation as saved. Resolves on success. */
+  save(generationId: string): Promise<void>;
 }
