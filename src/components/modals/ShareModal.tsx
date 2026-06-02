@@ -20,7 +20,7 @@ export function ShareModal() {
   const [copied, setCopied] = useState(false);
 
   const caption = t(
-    "I restyled my real room with Roomora — same walls, same windows. Try it free:",
+    "I restyled my real room with Roomora. Same walls, same windows. Try it free:",
     "我用 Roomora 重新设计了我的真实房间，墙和窗都没变。免费试试：",
   );
 
@@ -54,7 +54,7 @@ export function ShareModal() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch {
-      showToast(t("Couldn’t copy — try again", "复制失败，请重试"), "info");
+      showToast(t("Couldn’t copy, try again", "复制失败，请重试"), "info");
     }
   };
 
@@ -73,7 +73,7 @@ export function ShareModal() {
       }
     } else {
       await copyLink();
-      showToast(t("Link copied — paste to share", "链接已复制，粘贴即可分享"), "check");
+      showToast(t("Link copied, paste to share", "链接已复制，粘贴即可分享"), "check");
     }
   };
 

@@ -52,7 +52,7 @@ export function ShareView({
         </h1>
         <p className="mt-3 text-[15px] leading-relaxed text-ink-2 max-w-[40ch]">
           {t(
-            "Same walls, windows and proportions — restyled into a look worth living in. Drag to compare.",
+            "Same walls, windows and proportions, restyled into a look worth living in. Drag to compare.",
             "相同的墙面、窗户与空间比例，焕新成令人向往的风格。拖动对比。",
           )}
         </p>
