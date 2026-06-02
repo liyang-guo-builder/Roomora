@@ -1,20 +1,88 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
+import { useStore } from "@/lib/store";
 import { Icon, BeforeAfter } from "@/components/ui";
 import { useFlow } from "@/components/flow/FlowProvider";
 import { Sheet } from "./Sheet";
 
 export function ShareModal() {
   const { t } = useT();
-  const { closeModal } = useFlow();
+  const { closeModal, showToast } = useFlow();
+  const result = useStore((s) => s.result);
+
+  const generationId = result?.generationId ?? null;
+  const beforeUrl = result?.originalUrl ?? null;
+  const afterUrl = result?.versions[result.versions.length - 1]?.resultUrl ?? null;
+
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const caption = t(
+    "I restyled my real room with Roomora — same walls, same windows. Try it free:",
+    "我用 Roomora 重新设计了我的真实房间，墙和窗都没变。免费试试：",
+  );
+
+  // Publish the design (shared=true) and build the public link on open.
+  useEffect(() => {
+    if (!generationId) return;
+    let active = true;
+    fetch("/api/share", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ generationId }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (active && d?.ok) {
+          setShareUrl(`${window.location.origin}/share/${generationId}`);
+        }
+      })
+      .catch(() => {
+        /* leave shareUrl null → buttons no-op gracefully */
+      });
+    return () => {
+      active = false;
+    };
+  }, [generationId]);
+
+  const copyLink = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(`${caption} ${shareUrl}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      showToast(t("Couldn’t copy — try again", "复制失败，请重试"), "info");
+    }
+  };
+
+  // Native share sheet (mobile) surfaces RedNote / Instagram / TikTok / WeChat
+  // when installed. Desktop falls back to copying the link + caption.
+  const share = async () => {
+    if (!shareUrl) return;
+    const nav = navigator as Navigator & {
+      share?: (data: { title?: string; text?: string; url?: string }) => Promise<void>;
+    };
+    if (typeof nav.share === "function") {
+      try {
+        await nav.share({ title: "Roomora", text: caption, url: shareUrl });
+      } catch {
+        /* user dismissed the sheet — no-op */
+      }
+    } else {
+      await copyLink();
+      showToast(t("Link copied — paste to share", "链接已复制，粘贴即可分享"), "check");
+    }
+  };
+
   const targets: [string, string, string][] = [
     ["#FF2442", "书", t("RedNote", "小红书")],
     ["#E1306C", "◎", "Instagram"],
     ["#000", "♪", "TikTok"],
   ];
+
   return (
     <Sheet
       onClose={closeModal}
@@ -25,14 +93,16 @@ export function ShareModal() {
       )}
     >
       <div className="rounded-[18px] overflow-hidden mb-4 shadow-card">
-        <BeforeAfter height={170} watermark />
+        <BeforeAfter height={170} watermark beforeUrl={beforeUrl} afterUrl={afterUrl} />
       </div>
+
       <div className="grid grid-cols-3 gap-3">
         {targets.map(([tone, mono, lab]) => (
           <button
             key={lab}
-            onClick={closeModal}
-            className="flex flex-col items-center gap-2 py-2 active:scale-95 transition-transform"
+            onClick={share}
+            disabled={!shareUrl}
+            className="flex flex-col items-center gap-2 py-2 active:scale-95 transition-transform disabled:opacity-50"
           >
             <span
               className="w-14 h-14 rounded-2xl flex items-center justify-center text-[22px] text-white shadow-card"
@@ -44,19 +114,22 @@ export function ShareModal() {
           </button>
         ))}
       </div>
+
       <button
-        onClick={() => {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1600);
-        }}
-        className="mt-4 w-full h-[52px] rounded-[14px] border border-line bg-surface flex items-center justify-center gap-2 text-[14.5px] font-medium text-ink hover:border-ink-3 transition-colors"
+        onClick={copyLink}
+        disabled={!shareUrl}
+        className="mt-4 w-full h-[52px] rounded-[14px] border border-line bg-surface flex items-center justify-center gap-2 text-[14.5px] font-medium text-ink hover:border-ink-3 transition-colors disabled:opacity-50"
       >
         <Icon
           name={copied ? "check" : "share"}
           size={18}
           className={copied ? "text-sage" : "text-ink-2"}
         />
-        {copied ? t("Link copied", "链接已复制") : t("Copy link", "复制链接")}
+        {copied
+          ? t("Link copied", "链接已复制")
+          : shareUrl
+            ? t("Copy link", "复制链接")
+            : t("Preparing link…", "正在生成链接…")}
       </button>
     </Sheet>
   );

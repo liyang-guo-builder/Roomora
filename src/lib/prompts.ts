@@ -1,49 +1,50 @@
 /* Roomora — Qwen-Image-Edit prompt construction (server-side).
-   The architecture-lock clause is the core promise: never hallucinate or move
-   windows/doors. Every restyle prompt must end with it. */
+   The founding promise: only FURNISH the user's exact room — never rebuild its
+   walls, windows, doors or shape. Style descriptors therefore describe
+   FURNITURE & DECOR only (never wall materials like brick/concrete/plaster),
+   and every restyle ends with a strict architecture-lock clause. Validated
+   across all 10 styles on a real room (see spike/fidelity). */
 
 import type { StyleId, BudgetId } from "./types";
 
-/** Per-style descriptor injected into the restyle prompt. */
+/** Per-style descriptor — FURNITURE & DECOR only, never walls/architecture. */
 export const STYLE_PROMPTS: Record<StyleId, string> = {
   scandi:
-    "Restyle this room in a Scandinavian interior style: light oak and pale wood, white and soft grey walls, clean simple lines, cozy textiles, minimal clutter, plenty of natural light, a few green plants.",
+    "Scandinavian style: a light beige or grey fabric sofa, pale oak furniture, cozy wool throws and cushions, simple ceramics, a few green plants, soft minimalist styling.",
   japandi:
-    "Restyle this room in a Japandi interior style: a blend of Japanese minimalism and Scandinavian warmth, low natural-wood furniture, muted earthy tones, handmade ceramics, paper-lantern lighting, uncluttered serene space.",
+    "Japandi style: low natural-wood furniture, a linen sofa in muted earthy tones, handmade ceramics, a paper-shade lamp, a few plants, serene minimal styling.",
   cream:
-    "Restyle this room in a Cream (奶油风) interior style: soft creamy off-white and beige palette, rounded plush furniture, warm cozy lighting, gentle curves, milky neutral tones, a calm welcoming feel.",
+    "Cream (奶油风) style: a soft rounded plush sofa in creamy off-white, beige and milky tones, curved furniture, warm cozy lighting, textured cushions and throws.",
   midcentury:
-    "Restyle this room in a Mid-Century Modern interior style: warm walnut and teak wood, tapered legs, retro 1950s-60s silhouettes, mustard and olive accents, organic shapes, statement lighting.",
+    "Mid-Century Modern style: a walnut or teak sofa and chairs with tapered legs, retro 1960s silhouettes, mustard and olive cushions, a statement arc lamp, organic-shaped decor.",
   wabisabi:
-    "Restyle this room in a Wabi-Sabi (侘寂) interior style: imperfect natural textures, raw plaster and clay walls, aged wood, muted earthy neutrals, handcrafted objects, understated quiet beauty.",
+    "Wabi-Sabi (侘寂) style: low natural-wood and aged furniture, handcrafted ceramics, linen and raw-cotton textiles in muted earthy neutrals, dried branches, understated decor.",
   wood:
-    "Restyle this room in a Natural Wood (原木风) interior style: abundant warm natural-wood surfaces and furniture, light log-wood tones, soft linen textiles, a warm organic minimalist feel.",
+    "Natural Wood (原木风) style: warm light-wood furniture, a linen sofa, woven baskets, soft natural textiles, plenty of plants, an organic minimalist warm feel.",
   modern:
-    "Restyle this room in a Modern Minimalist interior style: clean uncluttered lines, neutral palette, sleek low-profile furniture, hidden storage, subtle texture, calm contemporary elegance.",
+    "Modern minimalist style: a sleek low-profile neutral sofa, clean-lined furniture, a simple coffee table, subtle textured cushions, refined contemporary accents.",
   newchinese:
-    "Restyle this room in a New Chinese (新中式) interior style: refined dark wood furniture with clean modern lines, ink-wash and jade accents, subtle traditional Chinese motifs, balanced symmetry, elegant restraint.",
+    "New Chinese (新中式) style: refined dark-wood furniture with clean modern lines, a structured sofa, ink-wash style framed art, jade-green and neutral accents, elegant balanced styling.",
   boho:
-    "Restyle this room in a Bohemian interior style: layered warm textiles, rattan and woven natural materials, abundant plants, terracotta and earthy jewel tones, eclectic relaxed mix, macramé and patterned rugs.",
+    "Bohemian style: a relaxed sofa layered with patterned textiles, a rattan chair, a patterned rug, macrame and woven decor, abundant plants, terracotta and earthy jewel-tone accents.",
   industrial:
-    "Restyle this room in an Industrial interior style: exposed brick and concrete textures, black metal and aged leather, raw reclaimed wood, Edison-bulb lighting, an urban loft feel.",
+    "Industrial style: an aged brown leather sofa, black metal-framed furniture, a reclaimed-wood coffee table, Edison-bulb lamps, leather and metal accents, moody warm styling.",
 };
 
 const BUDGET_PROMPTS: Record<BudgetId, string> = {
-  low: "Furnish it with modest, affordable, budget-friendly furniture and decor.",
-  mid: "Furnish it with mid-range, good-quality furniture and decor.",
-  high: "Furnish it with high-end, premium, designer furniture and decor.",
+  low: "Use modest, affordable, budget-friendly furniture and decor.",
+  mid: "Use mid-range, good-quality furniture and decor.",
+  high: "Use high-end, premium, designer furniture and decor.",
   skip: "",
 };
 
-/** Explicit instruction to actually FURNISH the room (otherwise Qwen plays it
-    too safe under the architecture lock and barely changes anything). */
+/** Lead-in: furnish the room into a complete, styled, magazine-quality space. */
 export const FURNISH =
-  "Fully furnish and decorate the space into a complete, lived-in, interior-magazine-quality room: add well-chosen furniture sized to fit the room (seating such as a sofa and/or armchairs, a coffee or side table, storage as appropriate), a rug, layered lighting, wall art or mirrors, styled shelving, plants, and soft textiles. Make it look professionally staged and inviting, not empty.";
+  "Furnish and restyle this exact room into a complete, well-styled, photorealistic interior-magazine living room.";
 
-/** The non-negotiable spatial-fidelity clause appended to every restyle.
-    Locks STRUCTURE but explicitly permits adding furniture/decor. */
+/** The non-negotiable spatial-fidelity clause — furnish, never rebuild. */
 export const ARCHITECTURE_LOCK =
-  "Critically, keep the room's structure and architecture identical to the original photo — do NOT move, add, or remove any windows, doors, or walls, and keep the existing floor, ceiling height, window view, and proportions exactly. You may freely add and arrange furniture, rugs, lighting, art, and decor, but the room's bones must stay exactly as photographed.";
+  "IMPORTANT: This is a real photo of an existing room. Keep the room's architecture and surfaces 100% identical to the original: the exact same walls and wall color/finish, the same windows and the same view outside them, the same doors, the same floor, the same ceiling, the same built-in shelves, and the same camera viewpoint and proportions. Do NOT add brick, concrete, wood paneling, wallpaper, or any new wall texture; do NOT move, add, remove, or resize any window or door; do NOT change the room's shape. Apply the style ONLY by placing free-standing furniture, rugs, lighting, textiles, plants and wall art into the existing room. You are furnishing and styling this exact room, not rebuilding it.";
 
 /** Build the full restyle prompt for Qwen. */
 export function buildRestylePrompt(args: {
@@ -51,7 +52,7 @@ export function buildRestylePrompt(args: {
   budget: BudgetId | null;
   note: string;
 }): string {
-  const parts: string[] = [STYLE_PROMPTS[args.style] ?? STYLE_PROMPTS.scandi, FURNISH];
+  const parts: string[] = [FURNISH, STYLE_PROMPTS[args.style] ?? STYLE_PROMPTS.scandi];
   if (args.budget && BUDGET_PROMPTS[args.budget]) {
     parts.push(BUDGET_PROMPTS[args.budget]);
   }
@@ -64,5 +65,5 @@ export function buildRestylePrompt(args: {
 /** Build a refine prompt — the user's instruction verbatim, change-only clause. */
 export function buildRefinePrompt(instruction: string): string {
   const note = instruction.trim();
-  return `${note}. Change only what is described; keep everything else in the room exactly the same.`;
+  return `${note}. Change only what is described; keep everything else in the room exactly the same, including the walls, windows, doors, floor and layout.`;
 }

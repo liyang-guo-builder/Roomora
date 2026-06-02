@@ -61,6 +61,15 @@ Session log. Append at the end of every session.
 - Save/My Designs tester running against prod.
 - Deferred next: Share → /share/[id] (RedNote lever, recommended next cycle); real payment; anon server-side hardening; WeChat; desktop parity.
 
+## Session 3 (cont.) — UX polish from user testing
+- **Home button**: header logo is now a Link to `/` on every screen; Result has a "Try another room" button; Save button shows persistent "Saved" + filled heart (not just a toast).
+- **Em-dashes removed** from ALL UI strings (EN + Chinese ——), replaced with plain punctuation. Code comments + AI prompt left as-is.
+- **Delete saved designs**: DELETE /api/designs (sets saved=false, own row) + designsService.unsave + ✕ button on My Designs tiles (TanStack Query invalidate). Verified on prod (2→1).
+- **Generating screen**: replaced empty placeholder boxes with a 4-step progress bar (Layout/Furniture/Lighting/Details) over the dimmed user photo; constructive copy.
+- **Variations hint**: "Tap to switch" only when >1 version, else "Refine to add more".
+- **Landing**: removed redundant 3-icon trust row (interactive before/after carries proof).
+- All deployed to prod, tsc/build/lint green each time.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).

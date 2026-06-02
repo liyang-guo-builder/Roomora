@@ -48,6 +48,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { modal, authReason, forceOut, toast, openModal } = useFlow();
   const showNav = NAV_ROUTES.includes(pathname);
 
+  // Public share pages render full-width, outside the mobile app chrome
+  // (no phone frame, header, bottom nav, or in-app modals).
+  if (pathname?.startsWith("/share")) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-dvh flex flex-col bg-paper mx-auto w-full max-w-[480px] relative">
       <AppHeader onCredits={() => openModal("buy")} />
