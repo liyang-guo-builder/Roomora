@@ -55,6 +55,12 @@ Session log. Append at the end of every session.
 - Style tiles + landing examples use real generated imagery (flux style tiles in /public/styles, qwen real-room before/afters in /public/examples).
 - homedesigns.ai competitor research agent was running (may have completed) — pending review.
 
+## Session 3 — 2026-06-02 — Cycle 2: Save/My Designs + Google sign-in
+- **Save + My Designs (real):** reused `generations` table + `saved` column (migration 0003, applied via Management API) + own-row UPDATE RLS. Server route `/api/designs` (POST saves & claims orphaned anon rows; GET lists saved, newest-first). Real `designsService`; `generationId` threaded into store `result`; `doSave` optimistic + rollback; MyDesignsScreen fetches via TanStack Query. Verified locally (save round-trip, DB saved=true). tsc/build/lint green; deployed to prod.
+- **Google sign-in:** code wired (`signInWithOAuth` in supabase.ts; onAuthed('google')). **Supabase Google provider CONFIGURED** via Management API (external_google_enabled=true, client_id/secret set; user's Google Cloud OAuth client, redirect URI = .../auth/v1/callback). Needs MANUAL user verification (headless can't complete Google OAuth); consent screen likely in "testing" mode → user must be a Google test user / may see "unverified app" → Advanced → proceed.
+- Save/My Designs tester running against prod.
+- Deferred next: Share → /share/[id] (RedNote lever, recommended next cycle); real payment; anon server-side hardening; WeChat; desktop parity.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
