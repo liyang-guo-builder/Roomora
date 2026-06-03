@@ -60,7 +60,15 @@ export async function POST(request: NextRequest) {
   const stripe = getStripe();
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    // TODO: enable wechat_pay + alipay payment methods once activated in the Stripe dashboard
+    // Charge everyone in EUR. Stripe "Adaptive Pricing" (local-currency
+    // conversion + a chooser) only supports Card and Link, so it suppresses
+    // WeChat Pay / Alipay at checkout. Disable it so those methods show.
+    adaptive_pricing: { enabled: false },
+    // Explicit method list: Card (covers Apple Pay / Google Pay wallets on
+    // supported devices) plus the China-relevant methods. Omitting "link"
+    // drops Stripe Link from the page.
+    payment_method_types: ["card", "wechat_pay", "alipay"],
+    payment_method_options: { wechat_pay: { client: "web" } },
     line_items: [
       {
         quantity: 1,
@@ -68,7 +76,7 @@ export async function POST(request: NextRequest) {
           currency: "eur",
           unit_amount: pack.eur * 100,
           product_data: {
-            name: `Roomora — ${pack.c} credits`,
+            name: `Roomora · ${pack.c} credits`,
           },
         },
       },
