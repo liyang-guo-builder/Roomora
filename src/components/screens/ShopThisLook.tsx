@@ -87,6 +87,12 @@ function Group({ group }: { group: ShopGroup }) {
   );
 }
 
+/** Real shopping goes live only once a real affiliate feed is connected.
+ * Until then we show a "coming soon" teaser instead of the sample products
+ * (whose buy links are placeholders). Flip NEXT_PUBLIC_SHOP_LIVE=true in Vercel
+ * the day an approved feed is ingested — no code change. */
+const SHOP_LIVE = process.env.NEXT_PUBLIC_SHOP_LIVE === "true";
+
 export function ShopThisLook({ generationId }: { generationId: string }) {
   const { t } = useT();
   const { data, isLoading, isError } = useQuery({
@@ -94,7 +100,22 @@ export function ShopThisLook({ generationId }: { generationId: string }) {
     queryFn: () => shopService.getShop(generationId),
     staleTime: 5 * 60 * 1000,
     retry: 1,
+    enabled: SHOP_LIVE,
   });
+
+  if (!SHOP_LIVE) {
+    return (
+      <div className="mt-3 flex items-start gap-2.5 text-[12.5px] text-ink-2 bg-sage-tint/50 rounded-xl px-3.5 py-3">
+        <Icon name="bag" size={16} className="text-sage shrink-0 mt-0.5" />
+        <span>
+          {t(
+            "Coming soon. Soon you'll be able to shop real furniture that matches your design.",
+            "即将上线。很快你就可以购买与你的设计相搭配的真实家具。",
+          )}
+        </span>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
