@@ -12,7 +12,8 @@ import type {
   PaymentService,
   PurchaseResult,
 } from "./types";
-import type { GenerationResult, GenerationVersion, CreditPack } from "../types";
+import type { GenerationResult, GenerationVersion } from "../types";
+import { PACKS } from "../packs";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const uid = () =>
@@ -100,13 +101,10 @@ export const generationService: GenerationService = {
   },
 };
 
-/* ── payment ── */
-const PACKS: CreditPack[] = [
-  { c: 20, eur: 5, cny: 38 },
-  { c: 60, eur: 12, cny: 92, best: true },
-  { c: 150, eur: 25, cny: 188 },
-];
-
+/* ── payment ──
+   Mock fallback for local/dev when Stripe is not configured. The real
+   paymentService (services/supabase.ts) calls /api/checkout and returns a
+   Stripe Checkout url; this mock just reports the credits to add locally. */
 export const paymentService: PaymentService = {
   packs: PACKS,
   async purchase(packIndex: number): Promise<PurchaseResult> {

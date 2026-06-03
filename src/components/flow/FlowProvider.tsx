@@ -17,9 +17,11 @@ import {
   creditsService,
   generationService,
   paymentService,
+  mockPaymentService,
   designsService,
   forceNextGenerationFailure,
   InsufficientCreditsError,
+  StripeNotConfiguredError,
 } from "@/lib/services";
 import type { AuthReason, ModalKind, PayMethod } from "@/lib/types";
 import type { IconName } from "@/components/ui";
@@ -313,15 +315,33 @@ export function FlowProvider({ children }: { children: ReactNode }) {
 
   const doPurchase = useCallback(
     async (packIndex: number, method: PayMethod) => {
-      // Payment stays mock; credits are granted via the real RPC so the
-      // server ledger stays authoritative.
-      const { added } = await paymentService.purchase(packIndex, method);
+      // Real payment: ask the server for a Stripe Checkout url and redirect.
+      // Credits are granted server-side by the webhook on payment success, so
+      // we do NOT bump the balance here. On returning to /account?purchase=
+      // success the balance refetches from the server.
       try {
-        const newBalance = await creditsService.grant(added);
+        const { checkoutUrl } = await paymentService.purchase(packIndex, method);
+        if (checkoutUrl) {
+          window.location.href = checkoutUrl;
+          return;
+        }
+      } catch (err) {
+        if (!(err instanceof StripeNotConfiguredError)) {
+          showToast(t("Couldn’t start checkout, try again", "无法发起支付，请重试"), "info");
+          return;
+        }
+        // Stripe not configured (local/dev): fall back to the mock credit bump
+        // so nothing crashes and the flow stays demoable.
+      }
+
+      const { added } = await mockPaymentService.purchase(packIndex, method);
+      const amount = added ?? 0;
+      try {
+        const newBalance = await creditsService.grant(amount);
         setCredits(newBalance);
       } catch {
         // Anonymous or RPC failure — fall back to local grant for display.
-        useStore.getState().grant(added);
+        useStore.getState().grant(amount);
       }
       closeModal();
       showToast(t("Credits added", "积分已到账"), "check");

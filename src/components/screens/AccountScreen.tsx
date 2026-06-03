@@ -1,10 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { useFlow } from "@/components/flow/FlowProvider";
-import { authService } from "@/lib/services";
+import { authService, creditsService } from "@/lib/services";
 import { Btn, Icon, Hex, type IconName } from "@/components/ui";
 import type { Lang } from "@/lib/types";
 
@@ -41,10 +42,52 @@ function Row({
 export function AccountScreen() {
   const { t } = useT();
   const { openModal, showToast } = useFlow();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const credits = useStore((s) => s.credits);
+  const setCredits = useStore((s) => s.setCredits);
   const lang = useStore((s) => s.lang);
   const setLang = useStore((s) => s.setLang);
   const user = useStore((s) => s.user);
+
+  // Returning from Stripe Checkout: the webhook credits the account server-side.
+  // Refetch the authoritative balance (with a couple of short retries to let the
+  // webhook land), confirm with a toast, then strip the query param.
+  const purchaseStatus = searchParams.get("purchase");
+  const handledPurchase = useRef(false);
+  useEffect(() => {
+    if (!purchaseStatus || handledPurchase.current) return;
+    handledPurchase.current = true;
+
+    if (purchaseStatus === "success") {
+      let cancelled = false;
+      const baseline = useStore.getState().credits;
+      (async () => {
+        // Poll a few times so the freshly-credited balance shows up even if the
+        // webhook is a beat behind the redirect.
+        for (let i = 0; i < 4 && !cancelled; i++) {
+          try {
+            const bal = await creditsService.balance();
+            if (!cancelled) setCredits(bal);
+            if (bal > baseline) break;
+          } catch {
+            // ignore; useAuthSync also refreshes on mount
+          }
+          await new Promise((r) => setTimeout(r, 1200));
+        }
+        if (!cancelled) showToast(t("Credits added", "积分已到账"), "check");
+      })();
+      router.replace("/account");
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (purchaseStatus === "cancelled") {
+      showToast(t("Checkout cancelled", "支付已取消"), "info");
+      router.replace("/account");
+    }
+  }, [purchaseStatus, setCredits, showToast, t, router]);
 
   const displayName = user?.email ? user.email.split("@")[0] : t("Guest", "访客");
   const displayEmail = user?.email ?? t("Not signed in", "未登录");

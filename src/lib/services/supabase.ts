@@ -4,11 +4,14 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { PACKS } from "@/lib/packs";
 import type {
   AuthService,
   AuthSession,
   AuthProvider,
   CreditsService,
+  PaymentService,
+  PurchaseResult,
 } from "./types";
 
 /* ── auth ──
@@ -109,5 +112,39 @@ export const creditsService: CreditsService = {
     });
     if (error) throw error;
     return data as number;
+  },
+};
+
+/* ── payment ──
+   Real Stripe checkout. purchase() asks the server to create a Checkout
+   Session and returns its url for the browser to redirect to; the credit is
+   granted server-side by the webhook, never here. When Stripe is not
+   configured the route replies 503 and we surface a typed error so the caller
+   can fall back to the mock (local/dev). */
+export class StripeNotConfiguredError extends Error {
+  constructor() {
+    super("stripe_not_configured");
+    this.name = "StripeNotConfiguredError";
+  }
+}
+
+export const paymentService: PaymentService = {
+  packs: PACKS,
+  async purchase(packIndex: number): Promise<PurchaseResult> {
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ packIndex }),
+    });
+    if (res.status === 503) {
+      // Stripe not wired up — let the caller fall back to the mock grant.
+      throw new StripeNotConfiguredError();
+    }
+    if (!res.ok) {
+      throw new Error("checkout_failed");
+    }
+    const data = (await res.json()) as { url?: string };
+    if (!data.url) throw new Error("checkout_failed");
+    return { checkoutUrl: data.url };
   },
 };

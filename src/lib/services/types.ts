@@ -68,7 +68,10 @@ export interface GenerationService {
 }
 
 export interface PurchaseResult {
-  added: number;
+  /** Credits to add locally (mock / dev fallback when Stripe is not configured). */
+  added?: number;
+  /** Stripe Checkout url to redirect the browser to (real payment). */
+  checkoutUrl?: string;
 }
 
 export interface PaymentService {
