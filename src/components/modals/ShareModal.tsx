@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { Icon, BeforeAfter } from "@/components/ui";
@@ -16,7 +17,6 @@ export function ShareModal() {
   const beforeUrl = result?.originalUrl ?? null;
   const afterUrl = result?.versions[result.versions.length - 1]?.resultUrl ?? null;
 
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const caption = t(
@@ -24,28 +24,34 @@ export function ShareModal() {
     "我用 Roomora 重新设计了我的真实房间，墙和窗都没变。免费试试：",
   );
 
-  // Publish the design (shared=true) and build the public link on open.
-  useEffect(() => {
-    if (!generationId) return;
-    let active = true;
-    fetch("/api/share", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ generationId }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (active && d?.ok) {
-          setShareUrl(`${window.location.origin}/share/${generationId}`);
-        }
-      })
-      .catch(() => {
-        /* leave shareUrl null → buttons no-op gracefully */
+  // Publish the design (shared=true) and build the public link. Runs on open;
+  // one retry on transient failure. Using TanStack Query keeps the loading /
+  // error / retry states out of an effect.
+  const {
+    data: shareUrl,
+    status,
+    isFetching,
+    refetch,
+  } = useQuery({
+    queryKey: ["share", generationId],
+    enabled: !!generationId,
+    retry: 1,
+    staleTime: Infinity,
+    queryFn: async () => {
+      const r = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ generationId }),
       });
-    return () => {
-      active = false;
-    };
-  }, [generationId]);
+      if (!r.ok) throw new Error("share_failed");
+      return `${window.location.origin}/share/${generationId}`;
+    },
+  });
+
+  const ready = status === "success" && !!shareUrl;
+  const failed = status === "error" || !generationId;
+  const loading = isFetching && !ready;
 
   const copyLink = async () => {
     if (!shareUrl) return;
@@ -83,6 +89,18 @@ export function ShareModal() {
     ["#000", "♪", "TikTok"],
   ];
 
+  const onBottom = () => {
+    if (ready) void copyLink();
+    else if (failed && generationId) void refetch();
+  };
+  const bottomLabel = copied
+    ? t("Link copied", "链接已复制")
+    : ready
+      ? t("Copy link", "复制链接")
+      : loading
+        ? t("Preparing link…", "正在生成链接…")
+        : t("Try again", "重试");
+
   return (
     <Sheet
       onClose={closeModal}
@@ -101,7 +119,7 @@ export function ShareModal() {
           <button
             key={lab}
             onClick={share}
-            disabled={!shareUrl}
+            disabled={!ready}
             className="flex flex-col items-center gap-2 py-2 active:scale-95 transition-transform disabled:opacity-50"
           >
             <span
@@ -116,20 +134,16 @@ export function ShareModal() {
       </div>
 
       <button
-        onClick={copyLink}
-        disabled={!shareUrl}
+        onClick={onBottom}
+        disabled={loading}
         className="mt-4 w-full h-[52px] rounded-[14px] border border-line bg-surface flex items-center justify-center gap-2 text-[14.5px] font-medium text-ink hover:border-ink-3 transition-colors disabled:opacity-50"
       >
         <Icon
           name={copied ? "check" : "share"}
           size={18}
-          className={copied ? "text-sage" : "text-ink-2"}
+          className={copied ? "text-sage" : failed && !loading ? "text-danger" : "text-ink-2"}
         />
-        {copied
-          ? t("Link copied", "链接已复制")
-          : shareUrl
-            ? t("Copy link", "复制链接")
-            : t("Preparing link…", "正在生成链接…")}
+        {bottomLabel}
       </button>
     </Sheet>
   );

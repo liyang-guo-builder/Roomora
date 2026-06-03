@@ -36,9 +36,12 @@ async function callGenerate(payload: Record<string, unknown>): Promise<GenerateR
 
 export const generationService: GenerationService = {
   async generate(input: GenerateInput) {
+    const mode = input.mode === "match" ? "match" : "restyle";
     const data = await callGenerate({
-      mode: "restyle",
+      mode,
       imageBase64: input.roomPhoto ?? undefined,
+      inspirationBase64:
+        mode === "match" ? (input.inspirationBase64 ?? undefined) : undefined,
       style: input.style,
       note: input.note,
       budget: input.budget,

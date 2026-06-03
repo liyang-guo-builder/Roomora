@@ -37,6 +37,8 @@ interface RoomoraState {
   hasPhoto: boolean;
   /** The user's chosen room photo as a data URI (Phase 3). */
   roomPhoto: string | null;
+  /** The "Match a photo" inspiration image as a data URI (captioned, never edited). */
+  inspirationPhoto: string | null;
   setup: SetupState;
   result: GenerationResult | null;
   /** Real Supabase session user; null when signed out. */
@@ -56,6 +58,7 @@ interface RoomoraState {
 
   setHasPhoto: (v: boolean) => void;
   setRoomPhoto: (uri: string | null) => void;
+  setInspirationPhoto: (uri: string | null) => void;
   setSetup: (s: SetupState) => void;
   setResult: (r: GenerationResult | null) => void;
   appendVersion: (v: GenerationVersion) => void;
@@ -75,6 +78,7 @@ export const useStore = create<RoomoraState>()(
 
       hasPhoto: false,
       roomPhoto: null,
+      inspirationPhoto: null,
       setup: DEFAULT_SETUP,
       result: null,
       user: null,
@@ -92,6 +96,7 @@ export const useStore = create<RoomoraState>()(
 
       setHasPhoto: (hasPhoto) => set({ hasPhoto }),
       setRoomPhoto: (roomPhoto) => set({ roomPhoto, hasPhoto: !!roomPhoto }),
+      setInspirationPhoto: (inspirationPhoto) => set({ inspirationPhoto }),
       setSetup: (setup) => set({ setup }),
       setResult: (result) => set({ result, currentSaved: false }),
       appendVersion: (v) => {
@@ -109,6 +114,7 @@ export const useStore = create<RoomoraState>()(
         set({
           hasPhoto: false,
           roomPhoto: null,
+          inspirationPhoto: null,
           setup: DEFAULT_SETUP,
           result: null,
           currentSaved: false,

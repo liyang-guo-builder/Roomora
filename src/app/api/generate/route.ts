@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { buildRestylePrompt, buildRefinePrompt } from "@/lib/prompts";
+import {
+  buildRestylePrompt,
+  buildRefinePrompt,
+  buildMatchPrompt,
+} from "@/lib/prompts";
 import type { StyleId, BudgetId } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -9,14 +13,66 @@ export const maxDuration = 60;
 
 const FAL_URL = "https://fal.run/fal-ai/qwen-image-edit";
 
+const CAPTION_PROMPT =
+  "Describe ONLY the interior decor style of this room in 2-3 sentences for restyling a different room: colour palette, materials, furniture types, textiles, lighting, plants and mood. Do NOT mention walls, windows, ceiling, doors, room shape or architecture.";
+
 interface GenerateBody {
   imageBase64?: string; // data URI (restyle input)
   imageUrl?: string; // public URL (alt restyle input)
+  inspirationBase64?: string; // data URI (match-mode style reference; captioned only)
   style?: StyleId;
   note?: string;
   budget?: BudgetId | null;
-  mode?: "restyle" | "refine";
+  mode?: "restyle" | "match" | "refine";
   parentId?: string;
+}
+
+/** Caption the STYLE ONLY of the inspiration image via MiniMax vision.
+   Throws on any failure so the caller can refund + report like a failed Qwen call. */
+async function captionInspiration(
+  inspirationDataUri: string,
+  apiKey: string,
+): Promise<string> {
+  const base =
+    process.env.MINIMAX_BASE_URL?.replace(/\/+$/, "") ||
+    "https://api.minimaxi.com";
+  const res = await fetch(`${base}/v1/text/chatcompletion_v2`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "MiniMax-Text-01",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: CAPTION_PROMPT },
+            { type: "image_url", image_url: { url: inspirationDataUri } },
+          ],
+        },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`minimax_error ${res.status}: ${detail.slice(0, 300)}`);
+  }
+  const json = (await res.json()) as {
+    choices?: { message?: { content?: string } }[];
+    base_resp?: { status_code?: number; status_msg?: string };
+  };
+  if (json.base_resp && json.base_resp.status_code !== 0) {
+    throw new Error(
+      `minimax_status ${json.base_resp.status_code}: ${json.base_resp.status_msg ?? ""}`,
+    );
+  }
+  const caption = json.choices?.[0]?.message?.content;
+  if (!caption || typeof caption !== "string" || !caption.trim()) {
+    throw new Error("minimax_no_caption");
+  }
+  return caption.trim();
 }
 
 /** Decode a data URI / raw base64 into bytes + content type. */
@@ -49,10 +105,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
-  const mode = body.mode === "refine" ? "refine" : "restyle";
+  const mode =
+    body.mode === "refine"
+      ? "refine"
+      : body.mode === "match"
+        ? "match"
+        : "restyle";
   const style: StyleId = body.style ?? "scandi";
   const note = body.note ?? "";
   const budget: BudgetId | null = body.budget ?? null;
+
+  // Match mode requires an inspiration image to caption (rejected before any
+  // credit is spent). The room photo (the edit base) is validated below.
+  if (mode === "match" && !body.inspirationBase64) {
+    return NextResponse.json({ error: "missing_inspiration" }, { status: 400 });
+  }
 
   // ── Identify the user (server session). ──
   const supabase = await createClient();
@@ -145,10 +212,27 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Build the prompt. ──
-    const prompt =
-      mode === "refine"
-        ? buildRefinePrompt(note)
-        : buildRestylePrompt({ style, budget, note });
+    let prompt: string;
+    if (mode === "refine") {
+      prompt = buildRefinePrompt(note);
+    } else if (mode === "match") {
+      // Caption the inspiration's STYLE ONLY via MiniMax (the inspiration image
+      // itself NEVER reaches Qwen — only its decor description does, so the user's
+      // room architecture is fully preserved). The user's roomPhoto stays the base.
+      if (!body.inspirationBase64) {
+        await refundOnFailure();
+        return NextResponse.json(
+          { error: "missing_inspiration", balance },
+          { status: 400 },
+        );
+      }
+      const minimaxKey = process.env.MINIMAX_API_KEY;
+      if (!minimaxKey) throw new Error("minimax_not_configured");
+      const caption = await captionInspiration(body.inspirationBase64, minimaxKey);
+      prompt = buildMatchPrompt(caption, budget, note);
+    } else {
+      prompt = buildRestylePrompt({ style, budget, note });
+    }
 
     // ── Call Qwen-Image-Edit on fal. ──
     const falRes = await fetch(FAL_URL, {

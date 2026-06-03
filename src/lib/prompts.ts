@@ -62,6 +62,25 @@ export function buildRestylePrompt(args: {
   return parts.join(" ");
 }
 
+/** Build a "match a photo" prompt for Qwen.
+   Same shape as buildRestylePrompt, but the per-style descriptor is replaced by
+   the MiniMax style-only caption of the user's inspiration image. The inspiration
+   itself never reaches Qwen — only its decor description does. */
+export function buildMatchPrompt(
+  caption: string,
+  budget: BudgetId | null,
+  note: string,
+): string {
+  const parts: string[] = [FURNISH, `Match this decor style: ${caption.trim()}.`];
+  if (budget && BUDGET_PROMPTS[budget]) {
+    parts.push(BUDGET_PROMPTS[budget]);
+  }
+  const trimmedNote = note?.trim();
+  if (trimmedNote) parts.push(`Also: ${trimmedNote}.`);
+  parts.push(ARCHITECTURE_LOCK);
+  return parts.join(" ");
+}
+
 /** Build a refine prompt — the user's instruction verbatim, change-only clause. */
 export function buildRefinePrompt(instruction: string): string {
   const note = instruction.trim();

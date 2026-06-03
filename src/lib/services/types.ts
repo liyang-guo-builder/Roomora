@@ -37,6 +37,10 @@ export interface GenerateInput {
   style: StyleId;
   note: string;
   budget: BudgetId | null;
+  /** "restyle" = curated style; "match" = match an uploaded inspiration photo. Defaults to "restyle". */
+  mode?: "restyle" | "match";
+  /** Match mode only: the inspiration image as a data URI (captioned, never edited). */
+  inspirationBase64?: string | null;
 }
 
 export interface RefineInput {

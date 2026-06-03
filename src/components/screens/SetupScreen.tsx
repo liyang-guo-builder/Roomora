@@ -16,13 +16,22 @@ export function SetupScreen() {
   const setSetup = useStore((s) => s.setSetup);
   const roomPhoto = useStore((s) => s.roomPhoto);
   const setRoomPhoto = useStore((s) => s.setRoomPhoto);
+  const inspirationPhoto = useStore((s) => s.inspirationPhoto);
+  const setInspirationPhoto = useStore((s) => s.setInspirationPhoto);
   const fileRef = useRef<HTMLInputElement>(null);
+  const inspoRef = useRef<HTMLInputElement>(null);
   const tab = setup.tab;
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setRoomPhoto(await readImageFile(file));
+  };
+
+  const onInspoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setInspirationPhoto(await readImageFile(file));
   };
 
   const budgets: [BudgetId, string][] = [
@@ -37,7 +46,9 @@ export function SetupScreen() {
     ["match", "image", t("Match a photo", "参考图片")],
   ];
 
-  const canContinue = !(tab === "browse" && !setup.style);
+  const canContinue =
+    (tab === "browse" && !!setup.style) ||
+    (tab === "match" && !!inspirationPhoto);
 
   return (
     <div className="px-5 pb-32 pt-3">
@@ -111,24 +122,58 @@ export function SetupScreen() {
         </div>
       ) : (
         <div className="mt-4">
-          <button className="w-full rounded-[18px] border-2 border-dashed border-brass/45 bg-brass-tint/40 hover:bg-brass-tint transition-colors p-6 flex flex-col items-center text-center">
-            <div className="w-14 h-14 rounded-2xl bg-brass text-paper flex items-center justify-center mb-3">
-              <Icon name="image" size={24} />
+          <input
+            ref={inspoRef}
+            type="file"
+            accept="image/*"
+            onChange={onInspoFile}
+            className="hidden"
+          />
+          {inspirationPhoto ? (
+            <div className="flex items-center gap-3 p-3 rounded-[18px] bg-surface border border-brass/40 shadow-card">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={inspirationPhoto}
+                alt={t("inspiration", "灵感图")}
+                className="w-16 h-16 shrink-0 rounded-xl object-cover"
+              />
+              <div className="min-w-0">
+                <div className="text-[11px] font-mono uppercase tracking-wider text-brass">
+                  {t("inspiration", "灵感图")}
+                </div>
+                <div className="text-[14px] font-semibold text-ink truncate">
+                  {t("Your reference photo", "你的参考图")}
+                </div>
+                <div className="text-[12px] text-ink-2 mt-0.5">
+                  {t("We’ll match its style — your room stays your room.", "我们会匹配它的风格——你的房间依旧是你的房间。")}
+                </div>
+              </div>
+              <button
+                onClick={() => inspoRef.current?.click()}
+                className="ml-auto text-[12.5px] font-medium text-brass hover:underline shrink-0"
+              >
+                {t("Change", "更换")}
+              </button>
             </div>
-            <div className="text-[15px] font-semibold text-ink">
-              {t("Upload an inspiration photo", "上传你喜欢的灵感图")}
-            </div>
-            <div className="text-[12.5px] text-ink-2 mt-1 max-w-[30ch]">
-              {t(
-                "A room you love from Pinterest, 小红书 or a magazine. We’ll bring its look into your space.",
-                "来自 Pinterest、小红书或杂志的房间，我们会把它的风格带入你的空间。",
-              )}
-            </div>
-          </button>
-          <div className="mt-3 flex items-center gap-2 text-[12px] text-brass bg-brass-tint/60 rounded-xl px-3 py-2.5">
-            <Icon name="sparkle" size={15} />{" "}
-            {t("Coming soon. Designed and ready to ship.", "即将推出，设计已就绪。")}
-          </div>
+          ) : (
+            <button
+              onClick={() => inspoRef.current?.click()}
+              className="w-full rounded-[18px] border-2 border-dashed border-brass/45 bg-brass-tint/40 hover:bg-brass-tint transition-colors p-6 flex flex-col items-center text-center"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-brass text-paper flex items-center justify-center mb-3">
+                <Icon name="image" size={24} />
+              </div>
+              <div className="text-[15px] font-semibold text-ink">
+                {t("Upload an inspiration photo", "上传你喜欢的灵感图")}
+              </div>
+              <div className="text-[12.5px] text-ink-2 mt-1 max-w-[30ch]">
+                {t(
+                  "A room you love from Pinterest, 小红书 or a magazine. We’ll bring its look into your space.",
+                  "来自 Pinterest、小红书或杂志的房间，我们会把它的风格带入你的空间。",
+                )}
+              </div>
+            </button>
+          )}
         </div>
       )}
 
@@ -174,7 +219,9 @@ export function SetupScreen() {
         <p className="text-center text-[11.5px] text-ink-3 mt-2">
           {canContinue
             ? t("Takes about 30 seconds", "大约需要 30 秒")
-            : t("Pick a style to continue", "选择一种风格以继续")}
+            : tab === "match"
+              ? t("Upload an inspiration photo to continue", "上传一张灵感图以继续")
+              : t("Pick a style to continue", "选择一种风格以继续")}
         </p>
       </div>
     </div>

@@ -96,7 +96,20 @@ export function FlowProvider({ children }: { children: ReactNode }) {
   const closeModal = useCallback(() => setModal(null), []);
 
   const doGenerate = useCallback(async () => {
-    const roomPhoto = useStore.getState().roomPhoto;
+    const { roomPhoto, inspirationPhoto } = useStore.getState();
+
+    // "Match a photo" tab restyles the user's room to match an uploaded
+    // inspiration; the browse tab uses a curated style. Both cost 1 credit /
+    // 1 free design and run the same single-image edit on the user's room.
+    const isMatch = setup.tab === "match";
+    const genInput = {
+      roomPhoto,
+      style: setup.style ?? "scandi",
+      note: setup.note,
+      budget: setup.budget,
+      mode: isMatch ? ("match" as const) : ("restyle" as const),
+      inspirationBase64: isMatch ? inspirationPhoto : null,
+    };
 
     // Anonymous trial: a few free designs (no signup, no server credit).
     // The free design is consumed only on SUCCESS. (Server allows anon; client gates.)
@@ -107,12 +120,7 @@ export function FlowProvider({ children }: { children: ReactNode }) {
       }
       router.push("/generating");
       try {
-        const result = await generationService.generate({
-          roomPhoto,
-          style: setup.style ?? "scandi",
-          note: setup.note,
-          budget: setup.budget,
-        });
+        const result = await generationService.generate(genInput);
         consumeAnonTrial();
         setResult(result);
         router.push("/result");
@@ -130,12 +138,7 @@ export function FlowProvider({ children }: { children: ReactNode }) {
     }
     router.push("/generating");
     try {
-      const result = await generationService.generate({
-        roomPhoto,
-        style: setup.style ?? "scandi",
-        note: setup.note,
-        budget: setup.budget,
-      });
+      const result = await generationService.generate(genInput);
       if (typeof result.balance === "number") setCredits(result.balance);
       setResult(result);
       router.push("/result");

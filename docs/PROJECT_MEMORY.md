@@ -70,6 +70,12 @@ Session log. Append at the end of every session.
 - **Landing**: removed redundant 3-icon trust row (interactive before/after carries proof).
 - All deployed to prod, tsc/build/lint green each time.
 
+## Session 3 (cont.) — Prompt fidelity fix + Share shipped
+- **Prompt fidelity (founding promise):** Industrial (and other styles implying wall materials) were rebuilding the room (brick walls, arched window). FIX: rewrote STYLE_PROMPTS to describe FURNITURE & DECOR only (no brick/concrete/plaster wall instructions) + much stronger ARCHITECTURE_LOCK ("furnish, don't rebuild"; keep exact walls/windows/doors/floor/shape). Validated across ALL 10 styles via montage (spike/fidelity) + live industrial gen on prod — room structure preserved. `src/lib/prompts.ts`. buildRefinePrompt also hardened.
+- **Share feature LIVE (task #10):** built in a PARALLEL session (with docs/GTM_PLAN.md + docs/HERO_CREATIVE.md). /api/share (opt-in shared=true), public /share/[id] page (before/after slider + OG tags + "Design your own, free" CTA), ShareModal wired (native share sheet + copy link), migration 0004 (shared column) applied. Verified on prod: share POST 200, /share/[id] renders publicly.
+- **PROCESS NOTE:** my `git add -A` accidentally bundled+deployed the parallel Share work untested. It happened to be complete + building + migration applied, so OK — but switched to explicit `git add <paths>` after. Lesson: always `git status` before staging.
+- Removed em-dashes from the new Share UI too.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
