@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { useFlow } from "@/components/flow/FlowProvider";
@@ -42,7 +42,6 @@ function Row({
 export function AccountScreen() {
   const { t } = useT();
   const { openModal, showToast } = useFlow();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const credits = useStore((s) => s.credits);
   const setCredits = useStore((s) => s.setCredits);
@@ -50,44 +49,64 @@ export function AccountScreen() {
   const setLang = useStore((s) => s.setLang);
   const user = useStore((s) => s.user);
 
-  // Returning from Stripe Checkout: the webhook credits the account server-side.
-  // Refetch the authoritative balance (with a couple of short retries to let the
-  // webhook land), confirm with a toast, then strip the query param.
+  // Returning from Stripe Checkout: the webhook credits the account server-side,
+  // and it can land several seconds after the redirect (longer for the async
+  // WeChat Pay / Alipay methods). Poll the authoritative balance until it rises
+  // (up to ~30s), updating the displayed number live so the user is never left
+  // looking at their old balance. We strip the query param with history (not a
+  // router navigation) so removing it does NOT re-run this effect and cancel the
+  // poll mid-flight.
   const purchaseStatus = searchParams.get("purchase");
   const handledPurchase = useRef(false);
   useEffect(() => {
     if (!purchaseStatus || handledPurchase.current) return;
     handledPurchase.current = true;
 
-    if (purchaseStatus === "success") {
-      let cancelled = false;
-      const baseline = useStore.getState().credits;
-      (async () => {
-        // Poll a few times so the freshly-credited balance shows up even if the
-        // webhook is a beat behind the redirect.
-        for (let i = 0; i < 4 && !cancelled; i++) {
-          try {
-            const bal = await creditsService.balance();
-            if (!cancelled) setCredits(bal);
-            if (bal > baseline) break;
-          } catch {
-            // ignore; useAuthSync also refreshes on mount
-          }
-          await new Promise((r) => setTimeout(r, 1200));
-        }
-        if (!cancelled) showToast(t("Credits added", "积分已到账"), "check");
-      })();
-      router.replace("/account");
-      return () => {
-        cancelled = true;
-      };
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", "/account");
     }
 
     if (purchaseStatus === "cancelled") {
       showToast(t("Checkout cancelled", "支付已取消"), "info");
-      router.replace("/account");
+      return;
     }
-  }, [purchaseStatus, setCredits, showToast, t, router]);
+
+    if (purchaseStatus !== "success") return;
+
+    let cancelled = false;
+    const baseline = useStore.getState().credits;
+    (async () => {
+      let credited = false;
+      // ~30s window: 15 tries, 2s apart.
+      for (let i = 0; i < 15 && !cancelled; i++) {
+        try {
+          const bal = await creditsService.balance();
+          if (!cancelled) setCredits(bal);
+          if (bal > baseline) {
+            credited = true;
+            break;
+          }
+        } catch {
+          // ignore; useAuthSync also refreshes on mount
+        }
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      if (!cancelled) {
+        showToast(
+          credited
+            ? t("Credits added", "积分已到账")
+            : t(
+                "Payment received. Your credits will appear shortly.",
+                "支付成功，积分将很快到账。",
+              ),
+          "check",
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [purchaseStatus, setCredits, showToast, t]);
 
   const displayName = user?.email ? user.email.split("@")[0] : t("Guest", "访客");
   const displayEmail = user?.email ?? t("Not signed in", "未登录");
