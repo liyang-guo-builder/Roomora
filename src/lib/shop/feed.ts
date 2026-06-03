@@ -83,18 +83,27 @@ export function parseAwinFeed(csv: string): ProductUpsert[] {
   const rows = parseCSV(csv);
   if (rows.length < 2) return [];
   const header = rows[0].map((h) => h.trim());
-  const idx = (name: string) => header.indexOf(name);
+  // Resolve a column by trying several candidate header names — real Awin
+  // Create-a-Feed exports vary (e.g. advertiser → merchant_name, image →
+  // merchant_image_url), so we accept either the sample's names or Awin's tokens.
+  const idx = (...names: string[]) => {
+    for (const n of names) {
+      const i = header.indexOf(n);
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
   const col = {
-    id: idx("aw_product_id"),
+    id: idx("aw_product_id", "merchant_product_id", "product_id"),
     name: idx("product_name"),
-    desc: idx("description"),
-    cat: idx("merchant_category"),
-    price: idx("search_price"),
+    desc: idx("description", "product_short_description"),
+    cat: idx("merchant_category", "category_name", "merchant_product_category_path"),
+    price: idx("search_price", "store_price", "display_price"),
     currency: idx("currency"),
-    image: idx("aw_image_url"),
+    image: idx("aw_image_url", "merchant_image_url", "large_image"),
     deeplink: idx("aw_deep_link"),
-    brand: idx("brand_name"),
-    advertiser: idx("advertiser"),
+    brand: idx("brand_name", "brand"),
+    advertiser: idx("advertiser", "merchant_name", "advertiser_name"),
   };
   const now = new Date().toISOString();
   const out: ProductUpsert[] = [];
