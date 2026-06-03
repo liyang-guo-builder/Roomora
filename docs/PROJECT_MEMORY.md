@@ -82,6 +82,17 @@ Session log. Append at the end of every session.
 - **Shop-this-look (Cycle 3, task #12) building** (background agent): products table + items jsonb migration (0005), sample Awin feed + ingestion, MiniMax `itemizeDesign` + `/api/shop` matcher, "Shop this look" panel on Result. Building against a SAMPLE feed; real Awin feed swaps in via `AWIN_FEED_URL` env on approval. Economics: free to us, retailer pays ~3-8% commission, ~sub-cent itemize cost/view, credits untouched. Plan = Cycle 3 in plan file.
 - USER ACTION PENDING: create Awin publisher account + apply to Maisons du Monde & La Redoute → send publisher ID + feed URL.
 
+## Session 3 (cont.) — Shop-this-look LIVE (sample feed)
+- **Cycle 3 DONE + verified on prod** (task #12): products table + items jsonb (migration 0005, applied to prod Supabase), sample Awin feed (22 products) ingested, MiniMax `itemizeDesign` + `/api/shop` matcher (search_products SQL fn, OR-tsquery + ts_rank + budget bands), "Shop this look" collapsible panel on ResultScreen with affiliate buy cards + commission disclosure. Live test: /api/shop on a real design → 4 groups (sofa/coffee_table/rug/plant) with sensible matches (e.g. "round wooden coffee table" → Otto Round Walnut €329). Panel renders well.
+- Itemization cached on generations.items. Cron route /api/cron/ingest-products gated by CRON_SECRET (returns 503 until set — safe/inert).
+- **TO GO LIVE FOR REAL:** user creates Awin account + advertiser approvals → set `AWIN_FEED_URL` + `CRON_SECRET` in Vercel; nightly cron then refreshes real products. Zero code change.
+
+## Session 4 — 2026-06-03 — Awin feed hardening (pre-connection de-risk)
+- Reviewed full Awin pipeline ahead of connecting the real feed. Found a latent bug: both the cron parser (`src/lib/shop/feed.ts`) and CLI (`scripts/ingest-awin.mjs`) matched only the sample header `advertiser`, but real Awin Create-a-Feed exports use `merchant_name` (and vary id/image tokens). As written, a real feed would import every product as advertiser "unknown" and possibly imageless — breaking the "zero code change" promise.
+- FIX: multi-candidate column resolver in both files (kept in sync). advertiser → [advertiser, merchant_name, advertiser_name]; image → [aw_image_url, merchant_image_url, large_image]; id → [aw_product_id, merchant_product_id, product_id]; price → [search_price, store_price, display_price]; cat → [merchant_category, category_name, merchant_product_category_path]; desc, brand also aliased. Sample feed still parses (22 products, advertiser=SampleHome, all categories normalized).
+- Gates green (tsc/lint/build); committed (5a4e6e8) + pushed main + deployed to prod. Cron stays inert until CRON_SECRET set — no behavior change, no tester needed.
+- **Still pending USER ACTION (the only blocker):** create Awin publisher account (£5 refundable deposit) → apply to Maisons du Monde + La Redoute → Toolbox/Create-a-Feed (CSV) → send Publisher ID + feed URL + approved advertisers. Then orchestrator sets `AWIN_FEED_URL` + `CRON_SECRET` in Vercel, runs one ingest, verifies real cards + affiliate tracking. RedNote launch owned by a separate agent (out of scope here).
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
