@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { useFlow } from "@/components/flow/FlowProvider";
 import { Btn, Icon, RoomPhoto, BeforeAfter, type IconName } from "@/components/ui";
 import { STYLE_NAMES } from "@/lib/constants";
+import { ShopThisLook } from "@/components/screens/ShopThisLook";
 
 export function ResultScreen() {
   const { t } = useT();
@@ -33,6 +34,8 @@ export function ResultScreen() {
   const beforeUrl = result?.originalUrl ?? null;
   const activeVersion = versions[Math.min(activeV, versions.length - 1)];
   const afterUrl = activeVersion?.resultUrl ?? null;
+  const generationId = result?.generationId ?? null;
+  const [shopOpen, setShopOpen] = useState(false);
 
   const actions: [IconName, string, () => void][] = [
     [
@@ -128,6 +131,28 @@ export function ResultScreen() {
           </button>
         ))}
       </div>
+
+      {/* Shop this look */}
+      {generationId && (
+        <div className="mt-3">
+          <button
+            onClick={() => setShopOpen((v) => !v)}
+            aria-expanded={shopOpen}
+            className="w-full flex items-center justify-between gap-2 px-4 h-[52px] rounded-2xl bg-sage-tint/70 border border-sage/30 text-ink hover:border-sage transition-colors active:scale-[.99]"
+          >
+            <span className="flex items-center gap-2">
+              <Icon name="bag" size={19} className="text-sage" />
+              <span className="text-[14.5px] font-semibold">{t("Shop this look", "购买同款")}</span>
+            </span>
+            <Icon
+              name="chevronDown"
+              size={18}
+              className={`text-ink-3 transition-transform ${shopOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {shopOpen && <ShopThisLook generationId={generationId} />}
+        </div>
+      )}
 
       <Btn variant="brass" size="lg" full icon="wand" className="mt-3" onClick={() => router.push("/refine")}>
         {t("Refine this design", "继续微调")}

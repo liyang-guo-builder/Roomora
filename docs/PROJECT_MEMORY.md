@@ -76,6 +76,12 @@ Session log. Append at the end of every session.
 - **PROCESS NOTE:** my `git add -A` accidentally bundled+deployed the parallel Share work untested. It happened to be complete + building + migration applied, so OK — but switched to explicit `git add <paths>` after. Lesson: always `git status` before staging.
 - Removed em-dashes from the new Share UI too.
 
+## Session 3 (cont.) — Match-a-photo LIVE + Shop-this-look started
+- **Match-a-photo DONE + verified on prod** (task #11): two-step (MiniMax style-only caption → single-image Qwen restyle). Setup "Match a photo" tab enabled (inspiration upload). Live test: Japandi inspiration on the test room kept exact window/shelves/parquet/chair + applied linen sofa, round table, paper-lantern lamp, soft rug. Committed + deployed.
+- **Prompt fidelity** confirmed across all 10 styles (furniture-only descriptors + strong lock). buildMatchPrompt added.
+- **Shop-this-look (Cycle 3, task #12) building** (background agent): products table + items jsonb migration (0005), sample Awin feed + ingestion, MiniMax `itemizeDesign` + `/api/shop` matcher, "Shop this look" panel on Result. Building against a SAMPLE feed; real Awin feed swaps in via `AWIN_FEED_URL` env on approval. Economics: free to us, retailer pays ~3-8% commission, ~sub-cent itemize cost/view, credits untouched. Plan = Cycle 3 in plan file.
+- USER ACTION PENDING: create Awin publisher account + apply to Maisons du Monde & La Redoute → send publisher ID + feed URL.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).

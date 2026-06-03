@@ -13,5 +13,9 @@ export { generationService } from "./generation";
 // Real Save + My Designs (Phase 4).
 export { designsService } from "./designs";
 
+// Real "Shop this look" (Phase 5).
+export { shopService } from "./shop";
+export type { ShopProduct, ShopGroup, ShopResult } from "./shop";
+
 // Still mock (payment).
 export { paymentService, forceNextGenerationFailure } from "./mock";

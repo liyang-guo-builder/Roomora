@@ -26,7 +26,8 @@ export type IconName =
   | "refresh"
   | "info"
   | "home"
-  | "eye";
+  | "eye"
+  | "bag";
 
 const PATHS: Record<IconName, ReactNode> = {
   upload: (
@@ -140,6 +141,12 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
       <circle cx="12" cy="12" r="2.5" />
+    </>
+  ),
+  bag: (
+    <>
+      <path d="M6 8h12l-1 11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z" />
+      <path d="M9 8V6.5a3 3 0 0 1 6 0V8" />
     </>
   ),
 };
