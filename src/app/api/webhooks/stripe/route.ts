@@ -39,8 +39,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid_signature" }, { status: 400 });
   }
 
-  // Only credit on a completed checkout; acknowledge everything else.
-  if (event.type !== "checkout.session.completed") {
+  // Credit on a completed checkout (cards confirm synchronously) OR on a
+  // successful async payment (WeChat Pay / Alipay settle a few seconds later
+  // and fire async_payment_succeeded). The payment_status === 'paid' guard
+  // below + the unique-session idempotency insert make the two events safe
+  // together: a card pays once on 'completed'; an async method skips 'completed'
+  // (still unpaid) and credits on 'async_payment_succeeded'. Acknowledge the rest.
+  if (
+    event.type !== "checkout.session.completed" &&
+    event.type !== "checkout.session.async_payment_succeeded"
+  ) {
     return NextResponse.json({ received: true });
   }
 
