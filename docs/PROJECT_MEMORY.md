@@ -118,6 +118,11 @@ Session log. Append at the end of every session.
 - Minor open items (non-blocking, flagged by tester): "Billing history" on Account still shows "None yet" (not wired to stripe_payments); two 404s on /account (likely a missing asset/endpoint). Cosmetic.
 - **PENDING USER ACTION for real money:** activate live payments → switch to live keys (orchestrator repeats: set live keys + recreate webhook on prod) → confirm WeChat/Alipay active in live. Decision pending: restrict checkout to Card+WeChat+Alipay (drop Stripe Link) or leave all on.
 
+## Session 4 (cont.) — Checkout payment-methods fix + Bohemian example regen
+- **Stripe Checkout was showing a confusing SGD/EUR currency chooser (+4% fee) and only Card + Link, no WeChat/Alipay.** Root cause: Stripe **Adaptive Pricing** (local-currency conversion) only supports Card + Link and suppresses WeChat Pay / Alipay. Fix in `/api/checkout`: `adaptive_pricing: { enabled: false }` + explicit `payment_method_types: ["card","wechat_pay","alipay"]` (drops Link; card still covers Apple/Google Pay wallets) + `payment_method_options.wechat_pay.client="web"`. Verified via API: session now EUR, no currency_conversion, methods = card/wechat_pay/alipay. Also replaced an em-dash in the line-item name with a middot (rule). Commit `d88f019`, deployed.
+- **Bohemian landing example regenerated** (`public/examples/proof_boho.jpg`): the old asset had collapsed the room's 3-panel window into 2, breaking the fidelity promise on the landing page. Regenerated from `room-before.jpg` via fal Qwen with the production architecture-lock prompt (added an explicit "three-panel window, keep exactly three panels" clause), generated 3 candidates, picked the faithful one, optimized to 159KB JPEG via sharp. Scandi + Japandi proofs verified faithful (3 panels), left unchanged. Commit `d147813`, deployed. (Note: static asset, same filename → users may need a hard refresh.)
+- Reusable learning: for landing/marketing example images, prompt should name the exact window panel count; generation can still drift on architecture, so generate a few candidates and eyeball-pick.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
