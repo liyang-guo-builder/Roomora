@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useT } from "@/lib/i18n";
 import { Btn, Icon } from "@/components/ui";
 import { useFlow } from "@/components/flow/FlowProvider";
-import { Sheet, BrandBtn } from "./Sheet";
+import { Sheet, BrandBtn, GoogleGMark } from "./Sheet";
 import type { AuthReason } from "@/lib/types";
 
 export function AuthModal({ reason }: { reason: AuthReason }) {
@@ -25,8 +25,7 @@ export function AuthModal({ reason }: { reason: AuthReason }) {
     <Sheet onClose={closeModal} title={t("Keep this design", "保存这个设计")} sub={subs[reason]}>
       <div className="flex flex-col gap-2.5 mt-1">
         <BrandBtn
-          tone="#4285F4"
-          mono="G"
+          icon={<GoogleGMark />}
           label={t("Continue with Google", "使用 Google 继续")}
           onClick={() => void onAuthed("google")}
         />

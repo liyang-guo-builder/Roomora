@@ -179,7 +179,15 @@ export function AccountScreen() {
       </div>
 
       <div className="mt-4 rounded-[20px] bg-surface border border-line/70 shadow-card overflow-hidden">
-        <Row icon="arrowLeft" label={t("Sign out", "退出登录")} danger onClick={() => void handleSignOut()} />
+        {user ? (
+          <Row icon="arrowLeft" label={t("Sign out", "退出登录")} danger onClick={() => void handleSignOut()} />
+        ) : (
+          <Row
+            icon="arrowRight"
+            label={t("Sign in", "登录")}
+            onClick={() => openModal("auth", { reason: "save" })}
+          />
+        )}
       </div>
       <p className="text-center text-[11px] text-ink-3 mt-6">
         Roomora · v1.0 · {t("Made in Paris", "巴黎制造")}
