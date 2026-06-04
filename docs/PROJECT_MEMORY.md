@@ -158,6 +158,14 @@ Session log. Append at the end of every session.
 - Possible future (not needed for launch): a true desktop **Landing** layout (two-column, larger before/after) for first impressions; the rest of the app is fine as the framed device.
 - Domain follow-ups (minor, not blocking): ensure www→apex works in Vercel; add room-ora.com to Google Cloud OAuth "authorized domains" when submitting for Google verification.
 
+## Session 4 (cont.) — Brand mark + PWA install (per gtm-assets/SPEC-pwa-install-and-icon.md)
+- **(0) Logo** (`Logo.tsx`): swapped the "R" glyph for the new 3-green mark (viewBox 0 0 2048 1928), knocked out in white inside the sage rounded square (matches the app icon). Wordmark kept. Verified in-app via desktop screenshot.
+- **(A) Home-screen icon:** copied sage icons → `src/app/apple-icon.png` (180), `src/app/icon.png` (192), `public/icon-192.png`, `public/icon-512.png`; added `src/app/manifest.ts` (name Roomora, standalone, bg #F6F3EA, theme #7C8866, 192 + 512 + maskable 512); `layout.tsx` gained `appleWebApp` metadata + `viewport.themeColor=#7C8866`. Verified on prod head: theme-color, `<link rel=manifest>`, apple-touch-icon (180), icon (192) all emitted; `/apple-icon.png` + `/icon.png` + `/manifest.webmanifest` all 200.
+- **(B) InstallHint** (`src/components/ui/InstallHint.tsx`, client): rendered once in `AppShell` (auto-skips `/share/*` via the existing early return). iOS Safari (non-standalone, not dismissed) → bilingual "Share → Add to Home Screen" bottom banner; Android → captures `beforeinstallprompt`, shows an Install button; hides on `appinstalled`; dismissal persisted in `localStorage('roomora_install_hint')`. Standalone → renders nothing. Sauge Doré styling. (Had to `eslint-disable react-hooks/set-state-in-effect` on the iOS branch — mount-time UA detection is correct; lazy init would break SSR hydration.)
+- Gates green (tsc/lint/build). Commit `4a8f677`, deployed to room-ora.com.
+- **Concern:** final "sage icon on the iPhone home screen" needs Liyang's actual device (can't verify headlessly) — but everything that drives it (apple-touch-icon.png served + linked, manifest, theme-color) is confirmed correct, so it will show the sage R, not the grey box.
+- Minor optional: old `src/app/favicon.ico` (grey R) still present → browser tab may still show it on some browsers; delete it later so the new `icon.png` is the favicon everywhere.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
