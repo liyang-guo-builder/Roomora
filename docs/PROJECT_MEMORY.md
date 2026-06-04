@@ -166,6 +166,13 @@ Session log. Append at the end of every session.
 - **Concern:** final "sage icon on the iPhone home screen" needs Liyang's actual device (can't verify headlessly) — but everything that drives it (apple-touch-icon.png served + linked, manifest, theme-color) is confirmed correct, so it will show the sage R, not the grey box.
 - Minor optional: old `src/app/favicon.ico` (grey R) still present → browser tab may still show it on some browsers; delete it later so the new `icon.png` is the favicon everywhere.
 
+## Session 4 (cont.) — Beauty pass: richer prompts + reference DB started
+- **Design felt "too AI."** Diagnosed: vague category prompts → model's bland average; flat lighting, over-staged, generic furniture.
+- **(1) Shipped richer designer-grade prompts** (`src/lib/prompts.ts`, commit `e14bf7f`, deployed): STYLE_PROMPTS rewritten as recipes (signature pieces + specific palette + materials + focal point + mood); FURNISH gained editorial-photography cues (directional window light, layered texture, restrained palette, depth of field). Architecture-lock unchanged. Verified on the real test room (scandi/japandi/boho via fal): window/shelves/parquet preserved AND output noticeably warmer + more designed. Clear win, no fidelity regression.
+- **(2) Reference/descriptor database started** at `gtm-assets/references/` (README + schema + `scandinavian.md` seeded from RedNote). Plan: per style, distill palette/pieces/materials/lighting/mood from real beautiful rooms → feed prompts, or run a curated reference through the existing match-a-photo pipeline (taste transfer, architecture kept). Descriptors are the asset (not images) → clean on copyright.
+- **RedNote collection lesson:** used `/rednote` skill (cookie auth OK, got Scandinavian results + screenshot), but the **2nd search tripped the anti-bot flag** (安全限制 / IP存在风险 300012) and I stopped per guardrail. Web automation is NOT reliable for bulk collection. Going forward: collect references via the **phone app** (save beautiful rooms → drop in `references/_images/<style>/`) then Claude captions them to extract descriptors; or very short infrequent web sessions.
+- Future quality levers noted (not done): engine bake-off (Qwen vs Nano Banana/Gemini/Seedream for aesthetics); use match-a-photo with curated refs per style; generate-N + aesthetic re-rank.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
