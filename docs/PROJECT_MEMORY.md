@@ -139,6 +139,12 @@ Session log. Append at the end of every session.
 - **NEXT (email for password reset / optional verification):** wire **Gmail SMTP** into Supabase Auth (Settings → Auth → SMTP): host `smtp.gmail.com`, port 587, user = Liyang's Gmail, pass = a Gmail **App Password** (needs 2FA on → myaccount.google.com/apppasswords → generate "Mail"). ~500/day, no rate limit. Until then: signup/login work fully (no email), but "forgot password" has no delivery yet (forgot-password UI not built yet either). Gmail deliverability to cn inboxes (qq/163) still imperfect → a real domain + provider later for scale.
 - Note: brand line "No passwords, ever" was dropped (we now use passwords).
 
+## Session 4 (cont.) — Gmail SMTP wired into Supabase
+- Reused the tennis app's Gmail sender (`AI-Projects/tennis-pwa/backend/.env`): address `paristennis.booking.assistant@gmail.com` + its App Password. Configured **Supabase Auth custom SMTP** via Management API: `smtp_host=smtp.gmail.com`, port 587, user=that Gmail, sender_name="Roomora", and raised `rate_limit_email_sent=30` (now allowed since custom SMTP is active). Creds live ONLY in Supabase auth config (server-side), not in app env/Vercel.
+- Test send (OTP to the Gmail inbox) returned HTTP 200 = accepted + dispatched via SMTP. Liyang to confirm receipt in that inbox.
+- **Branding caveat (flagged):** emails send from a tennis-booking address with display name "Roomora". Works, but for clean branding + better deliverability, create a dedicated Roomora Gmail (or real domain) later and swap `smtp_user`/`smtp_admin_email`/`smtp_pass`.
+- **Not built yet:** a "Forgot password?" flow (link + `/auth/reset` page calling `resetPasswordForEmail` + `updateUser({password})`). Now that SMTP works, this is the natural next step so users can recover accounts.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
