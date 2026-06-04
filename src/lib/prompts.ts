@@ -7,28 +7,31 @@
 
 import type { StyleId, BudgetId } from "./types";
 
-/** Per-style descriptor — FURNITURE & DECOR only, never walls/architecture. */
+/** Per-style descriptor — FURNITURE, DECOR, PALETTE, LIGHTING & MOOD only,
+ *  never walls/architecture. Written as designer-grade recipes (signature
+ *  pieces + specific palette + materials + a clear focal point + mood) to push
+ *  the engine away from the generic, flat, over-staged "AI render" look. */
 export const STYLE_PROMPTS: Record<StyleId, string> = {
   scandi:
-    "Scandinavian style: a light beige or grey fabric sofa, pale oak furniture, cozy wool throws and cushions, simple ceramics, a few green plants, soft minimalist styling.",
+    "Scandinavian: a low oatmeal or light-grey linen sofa, pale oak and birch furniture with tapered legs, a soft wool boucle armchair, a chunky knit throw and linen cushions, a jute flatweave rug, simple matte ceramics, a paper pendant or slim arc lamp, a few sculptural green plants. Palette of warm white, oatmeal, pale wood and soft sage. Airy, calm and uncluttered with one clear focal point.",
   japandi:
-    "Japandi style: low natural-wood furniture, a linen sofa in muted earthy tones, handmade ceramics, a paper-shade lamp, a few plants, serene minimal styling.",
+    "Japandi: low solid walnut and oak furniture, a muted clay-toned linen sofa, handmade wabi ceramics, a paper-shade floor lamp, a low slatted coffee table, a single ikebana branch in a stoneware vase, a flatweave wool rug. Palette of warm beige, clay, charcoal and natural wood. Serene and minimal with generous negative space.",
   cream:
-    "Cream (奶油风) style: a soft rounded plush sofa in creamy off-white, beige and milky tones, curved furniture, warm cozy lighting, textured cushions and throws.",
+    "Cream (奶油风): a plush rounded boucle sofa in creamy off-white, curved milky-toned furniture, a soft high-pile rug, a travertine or cream-stone coffee table, warm dimmable lamps, layered textured throws and rounded cushions. Palette of cream, beige, oat and soft caramel. Cozy, soft and rounded with a warm glow.",
   midcentury:
-    "Mid-Century Modern style: a walnut or teak sofa and chairs with tapered legs, retro 1960s silhouettes, mustard and olive cushions, a statement arc lamp, organic-shaped decor.",
+    "Mid-Century Modern: a walnut or teak sofa with tapered legs, low organic-shaped lounge chairs, a brass arc floor lamp, a tripod side table, mustard and burnt-olive cushions, a geometric rug, ceramic table lamps and abstract framed art. Palette of walnut, mustard, olive, cream and brass. Warm, retro 1960s and curated.",
   wabisabi:
-    "Wabi-Sabi (侘寂) style: low natural-wood and aged furniture, handcrafted ceramics, linen and raw-cotton textiles in muted earthy neutrals, dried branches, understated decor.",
+    "Wabi-Sabi (侘寂): low aged-wood furniture, a slubby linen sofa in muted greige, handcrafted irregular ceramics, raw-cotton and linen textiles, dried pampas or branches in a stoneware vessel, a worn flatweave rug, soft diffused light. Palette of greige, sand, clay and ash. Imperfect, quiet, organic and understated.",
   wood:
-    "Natural Wood (原木风) style: warm light-wood furniture, a linen sofa, woven baskets, soft natural textiles, plenty of plants, an organic minimalist warm feel.",
+    "Natural Wood (原木风): warm light-oak and ash furniture, a natural linen sofa, woven rattan and cane details, jute baskets, soft cotton textiles, abundant green plants and simple stoneware. Palette of honey oak, cream, sage and terracotta. Organic, warm, relaxed and sunlit.",
   modern:
-    "Modern minimalist style: a sleek low-profile neutral sofa, clean-lined furniture, a simple coffee table, subtle textured cushions, refined contemporary accents.",
+    "Modern minimalist: a sleek low-profile sofa in stone grey, clean-lined furniture, a slim marble or lacquer coffee table, a single statement floor lamp, restrained sculptural decor and one large abstract artwork. Palette of greige, charcoal, white and one muted accent. Refined, intentional and uncluttered.",
   newchinese:
-    "New Chinese (新中式) style: refined dark-wood furniture with clean modern lines, a structured sofa, ink-wash style framed art, jade-green and neutral accents, elegant balanced styling.",
+    "New Chinese (新中式): refined dark-walnut furniture with clean modern lines, a structured linen sofa, a low tea table, ink-wash style framed art, a ceramic table lamp, jade-green and warm-neutral accents and a single elegant orchid or bonsai. Palette of warm neutral, dark walnut, jade and ink. Balanced, serene and modern-oriental.",
   boho:
-    "Bohemian style: a relaxed sofa layered with patterned textiles, a rattan chair, a patterned rug, macrame and woven decor, abundant plants, terracotta and earthy jewel-tone accents.",
+    "Bohemian: a relaxed natural-linen sofa layered with patterned and tasselled textiles, a rattan lounge chair, a vintage patterned rug, a macrame wall hanging, woven baskets, abundant trailing plants and eclectic ceramics. Palette of terracotta, ochre, cream and deep teal. Layered, warm, lived-in and collected.",
   industrial:
-    "Industrial style: an aged brown leather sofa, black metal-framed furniture, a reclaimed-wood coffee table, Edison-bulb lamps, leather and metal accents, moody warm styling.",
+    "Industrial: an aged cognac leather sofa, black metal-framed furniture, a reclaimed-wood and steel coffee table, Edison-bulb and articulated metal lamps, leather and worn-wood accents, a faded vintage rug and a couple of large plants. Palette of cognac, charcoal, raw steel and warm wood. Moody, warm urban-loft.",
 };
 
 const BUDGET_PROMPTS: Record<BudgetId, string> = {
@@ -38,9 +41,11 @@ const BUDGET_PROMPTS: Record<BudgetId, string> = {
   skip: "",
 };
 
-/** Lead-in: furnish the room into a complete, styled, magazine-quality space. */
+/** Lead-in: furnish the room into a complete, styled, magazine-quality space.
+ *  Adds editorial-photography + composition cues that counter the flat, evenly
+ *  lit, over-staged "AI" look (lighting, texture, focal point, restrained palette). */
 export const FURNISH =
-  "Furnish and restyle this exact room into a complete, well-styled, photorealistic interior-magazine living room.";
+  "Furnish and restyle this exact room into a complete, beautifully styled, photorealistic living room worthy of an interior-design magazine: natural directional window light with soft shadows, layered textures, a clear focal point and a restrained, harmonious color palette, shot like editorial interior photography with gentle depth of field and true-to-life materials.";
 
 /** The non-negotiable spatial-fidelity clause — furnish, never rebuild. */
 export const ARCHITECTURE_LOCK =
