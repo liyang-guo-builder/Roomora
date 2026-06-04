@@ -151,6 +151,13 @@ Session log. Append at the end of every session.
 - **Caveat (PKCE):** the reset link must be opened on the **same browser/device** that requested it (the code_verifier cookie lives there). Fine for the typical mobile flow (request + open on the same phone); cross-device would fail. Acceptable for launch.
 - Recovery email still uses Supabase's **default template** (not Roomora-branded) — polish later if desired.
 
+## Session 4 (cont.) — Custom domain room-ora.com + desktop framing
+- Liyang bought **room-ora.com** and connected it in Vercel (now aliased; app serves there, no console errors).
+- **Domain rewiring done:** Supabase `site_url=https://room-ora.com` + `uri_allow_list` now includes `https://room-ora.com/**` and `https://www.room-ora.com/**` (kept vercel.app + localhost). Vercel `NEXT_PUBLIC_APP_URL` updated to `https://room-ora.com` + redeployed. Auth (Google/reset redirects) + checkout origin now work on the new domain. Stripe webhook stays on the vercel.app URL (both domains serve the same app, so it still resolves) — fine, no change needed.
+- **Desktop layout fix** (`AppShell.tsx`): app was a lonely 480px column on flat bg at desktop widths. Now on `md+` the app sits in a centered rounded "device" frame (border + soft shadow, `h-[min(900px,94vh)]`, internal scroll) over a Sauge gradient canvas. Mobile unchanged (full-screen). Verified via desktop screenshot (1440x900) — looks intentional. Commit `a2da2b6`.
+- Possible future (not needed for launch): a true desktop **Landing** layout (two-column, larger before/after) for first impressions; the rest of the app is fine as the framed device.
+- Domain follow-ups (minor, not blocking): ensure www→apex works in Vercel; add room-ora.com to Google Cloud OAuth "authorized domains" when submitting for Google verification.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
