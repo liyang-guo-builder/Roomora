@@ -55,15 +55,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col bg-paper mx-auto w-full max-w-[480px] relative">
-      <AppHeader onCredits={() => openModal("buy")} />
-      <main className="flex-1 overflow-x-hidden">{children}</main>
-      {showNav && <BottomNav />}
+    // Outer canvas: flat paper on mobile; on desktop a warm gradient that frames
+    // the app as an intentional centered "device" instead of a lonely column.
+    <div className="min-h-dvh bg-paper md:bg-[linear-gradient(155deg,#E7EBDF_0%,#EFE9D9_55%,#E4DECE_100%)] md:flex md:items-center md:justify-center md:p-6">
+      <div className="relative flex flex-col bg-paper w-full max-w-[480px] min-h-dvh md:min-h-0 md:h-[min(900px,94vh)] md:rounded-[44px] md:border md:border-line/70 md:shadow-[0_30px_80px_-24px_rgba(60,59,48,.4)] md:overflow-hidden">
+        <AppHeader onCredits={() => openModal("buy")} />
+        <main className="flex-1 overflow-x-hidden md:overflow-y-auto">{children}</main>
+        {showNav && <BottomNav />}
 
-      {modal === "auth" && <AuthModal reason={authReason} />}
-      {modal === "buy" && <BuyModal forceOut={forceOut} />}
-      {modal === "share" && <ShareModal />}
-      {toast && <Toast icon={toast.icon}>{toast.msg}</Toast>}
+        {modal === "auth" && <AuthModal reason={authReason} />}
+        {modal === "buy" && <BuyModal forceOut={forceOut} />}
+        {modal === "share" && <ShareModal />}
+        {toast && <Toast icon={toast.icon}>{toast.msg}</Toast>}
+      </div>
     </div>
   );
 }
