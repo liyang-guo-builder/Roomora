@@ -25,6 +25,8 @@ export interface AuthService {
   signUp(email: string, password: string, fullName?: string): Promise<void>;
   /** Sign in with an existing email + password. */
   signInWithPassword(email: string, password: string): Promise<void>;
+  /** Send a password-reset email; the link lands on /auth/reset to set a new one. */
+  resetPassword(email: string): Promise<void>;
   signOut(): Promise<void>;
 }
 

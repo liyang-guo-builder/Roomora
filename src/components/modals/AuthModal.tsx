@@ -71,6 +71,23 @@ export function AuthModal({ reason }: { reason: AuthReason }) {
     }
   }
 
+  async function forgot() {
+    const e = email.trim();
+    if (!e) {
+      showToast(t("Enter your email first", "请先输入邮箱"), "info");
+      return;
+    }
+    setBusy(true);
+    try {
+      await authService.resetPassword(e);
+      showToast(t("Check your email for a reset link", "重置链接已发送至你的邮箱"), "mail");
+    } catch {
+      showToast(t("Couldn’t send the reset email, try again", "发送失败，请重试"), "info");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <Sheet onClose={closeModal} title={t("Keep this design", "保存这个设计")} sub={subs[reason]}>
       <div className="flex flex-col gap-3 mt-1">
@@ -120,6 +137,14 @@ export function AuthModal({ reason }: { reason: AuthReason }) {
             className={inputCls}
           />
         </div>
+        {mode === "signin" && (
+          <button
+            onClick={() => void forgot()}
+            className="text-[12.5px] text-ink-3 hover:text-sage text-left -mt-1 w-fit"
+          >
+            {t("Forgot password?", "忘记密码？")}
+          </button>
+        )}
         {mode === "signup" && (
           <div>
             <label className={labelCls}>{t("Confirm password", "确认密码")}</label>

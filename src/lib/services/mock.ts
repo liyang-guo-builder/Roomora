@@ -37,6 +37,9 @@ export const authService: AuthService = {
   async signInWithPassword(): Promise<void> {
     await wait(300);
   },
+  async resetPassword(): Promise<void> {
+    await wait(300);
+  },
   async signOut(): Promise<void> {
     await wait(150);
   },
