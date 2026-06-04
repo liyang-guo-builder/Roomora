@@ -19,8 +19,10 @@ export interface AuthSession {
 }
 
 export interface AuthService {
-  /** Sign in with the given provider. WeChat is a deferred placeholder. */
+  /** Sign in with the given provider. For "email" this sends a 6-digit code. */
   signIn(provider: AuthProvider, email?: string): Promise<AuthSession>;
+  /** Verify the 6-digit email code; establishes the session on success. */
+  verifyEmailOtp(email: string, token: string): Promise<void>;
   signOut(): Promise<void>;
 }
 

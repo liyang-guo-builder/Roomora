@@ -24,17 +24,15 @@ export const authService: AuthService = {
 
     if (provider === "email") {
       if (!email) throw new Error("email_required");
+      // Send a 6-digit code (no emailRedirectTo → the email carries the code,
+      // which the user types back into the app via verifyEmailOtp). New users
+      // are created on verify; they get +3 credits via the signup trigger.
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: {
-          emailRedirectTo:
-            typeof window !== "undefined"
-              ? `${window.location.origin}/auth/callback`
-              : undefined,
-        },
+        options: { shouldCreateUser: true },
       });
       if (error) throw error;
-      // Magic link sent; session is established later via the callback route.
+      // No session yet; the user enters the code, then verifyEmailOtp signs in.
       return { userId: "", email, grantedCredits: 0 };
     }
 
@@ -57,8 +55,16 @@ export const authService: AuthService = {
       return { userId: "", email: null, grantedCredits: 0 };
     }
 
-    // WeChat OAuth not configured yet — UI keeps it as a placeholder.
+    // WeChat OAuth not configured yet.
     throw new Error("provider_not_configured");
+  },
+
+  async verifyEmailOtp(email: string, token: string): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    if (error) throw error;
+    // Session is now set; onAuthStateChange (useAuthSync) mirrors it + the
+    // signup trigger grants +3 credits to brand-new users.
   },
 
   async signOut(): Promise<void> {
