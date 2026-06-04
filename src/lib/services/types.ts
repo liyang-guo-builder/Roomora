@@ -19,10 +19,12 @@ export interface AuthSession {
 }
 
 export interface AuthService {
-  /** Sign in with the given provider. For "email" this sends a 6-digit code. */
+  /** OAuth sign-in (Google). Redirects the browser. */
   signIn(provider: AuthProvider, email?: string): Promise<AuthSession>;
-  /** Verify the 6-digit email code; establishes the session on success. */
-  verifyEmailOtp(email: string, token: string): Promise<void>;
+  /** Create an email + password account. Instant session (no verification). */
+  signUp(email: string, password: string, fullName?: string): Promise<void>;
+  /** Sign in with an existing email + password. */
+  signInWithPassword(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
 }
 

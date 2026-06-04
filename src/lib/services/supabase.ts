@@ -59,12 +59,22 @@ export const authService: AuthService = {
     throw new Error("provider_not_configured");
   },
 
-  async verifyEmailOtp(email: string, token: string): Promise<void> {
+  async signUp(email: string, password: string, fullName?: string): Promise<void> {
     const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: fullName ? { data: { full_name: fullName } } : undefined,
+    });
     if (error) throw error;
-    // Session is now set; onAuthStateChange (useAuthSync) mirrors it + the
-    // signup trigger grants +3 credits to brand-new users.
+    // Instant signup (email confirmation disabled) → session is set now, and
+    // the signup trigger grants +3 credits. useAuthSync mirrors it to the store.
+  },
+
+  async signInWithPassword(email: string, password: string): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
   },
 
   async signOut(): Promise<void> {

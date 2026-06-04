@@ -31,8 +31,11 @@ export const authService: AuthService = {
       grantedCredits: 3, // +3 on first sign-in
     };
   },
-  async verifyEmailOtp(): Promise<void> {
-    await wait(200);
+  async signUp(): Promise<void> {
+    await wait(300);
+  },
+  async signInWithPassword(): Promise<void> {
+    await wait(300);
   },
   async signOut(): Promise<void> {
     await wait(150);
