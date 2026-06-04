@@ -143,7 +143,13 @@ Session log. Append at the end of every session.
 - Reused the tennis app's Gmail sender (`AI-Projects/tennis-pwa/backend/.env`): address `paristennis.booking.assistant@gmail.com` + its App Password. Configured **Supabase Auth custom SMTP** via Management API: `smtp_host=smtp.gmail.com`, port 587, user=that Gmail, sender_name="Roomora", and raised `rate_limit_email_sent=30` (now allowed since custom SMTP is active). Creds live ONLY in Supabase auth config (server-side), not in app env/Vercel.
 - Test send (OTP to the Gmail inbox) returned HTTP 200 = accepted + dispatched via SMTP. Liyang to confirm receipt in that inbox.
 - **Branding caveat (flagged):** emails send from a tennis-booking address with display name "Roomora". Works, but for clean branding + better deliverability, create a dedicated Roomora Gmail (or real domain) later and swap `smtp_user`/`smtp_admin_email`/`smtp_pass`.
-- **Not built yet:** a "Forgot password?" flow (link + `/auth/reset` page calling `resetPasswordForEmail` + `updateUser({password})`). Now that SMTP works, this is the natural next step so users can recover accounts.
+- ~~Not built yet: a "Forgot password?" flow~~ → **BUILT (next entry).**
+
+## Session 4 (cont.) — Password reset flow
+- **Built + deployed** (commit `ec4b232`): Sign-in mode now has a **"Forgot password?"** link → `authService.resetPassword(email)` (`resetPasswordForEmail`, redirectTo `/auth/callback?next=/auth/reset`). New client page **`/auth/reset`** confirms the recovery session, takes a new password + confirm, calls `supabase.auth.updateUser({password})`, then routes home signed in. Invalid/expired links show a clear message. Redirect allowlist already covers it (`…/**`).
+- Live send check: `POST /auth/v1/recover` to the Gmail inbox returned 200 (reset email dispatched via SMTP).
+- **Caveat (PKCE):** the reset link must be opened on the **same browser/device** that requested it (the code_verifier cookie lives there). Fine for the typical mobile flow (request + open on the same phone); cross-device would fail. Acceptable for launch.
+- Recovery email still uses Supabase's **default template** (not Roomora-branded) — polish later if desired.
 
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
