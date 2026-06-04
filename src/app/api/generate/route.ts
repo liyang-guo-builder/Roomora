@@ -11,7 +11,11 @@ import type { StyleId, BudgetId } from "@/lib/types";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const FAL_URL = "https://fal.run/fal-ai/qwen-image-edit";
+// Restyle + match-a-photo use Nano Banana (Gemini image) — clearly more
+// beautiful in the bake-off, ~$0.039/image, architecture preserved. Refine
+// stays on Qwen-Image-Edit for tighter "change only X" control.
+const QWEN_EDIT_URL = "https://fal.run/fal-ai/qwen-image-edit";
+const NANO_BANANA_EDIT_URL = "https://fal.run/fal-ai/nano-banana/edit";
 
 const CAPTION_PROMPT =
   "Describe ONLY the interior decor style of this room in 2-3 sentences for restyling a different room: colour palette, materials, furniture types, textiles, lighting, plants and mood. Do NOT mention walls, windows, ceiling, doors, room shape or architecture.";
@@ -234,20 +238,26 @@ export async function POST(request: NextRequest) {
       prompt = buildRestylePrompt({ style, budget, note });
     }
 
-    // ── Call Qwen-Image-Edit on fal. ──
-    const falRes = await fetch(FAL_URL, {
+    // ── Call the image-edit engine on fal. ──
+    // Nano Banana for restyle + match (more beautiful); Qwen for refine (control).
+    const useNanoBanana = mode !== "refine";
+    const falRes = await fetch(useNanoBanana ? NANO_BANANA_EDIT_URL : QWEN_EDIT_URL, {
       method: "POST",
       headers: {
         Authorization: `Key ${falKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        prompt,
-        image_url: inputImageUrl,
-        num_inference_steps: 30,
-        guidance_scale: 4,
-        output_format: "png",
-      }),
+      body: JSON.stringify(
+        useNanoBanana
+          ? { prompt, image_urls: [inputImageUrl], output_format: "png" }
+          : {
+              prompt,
+              image_url: inputImageUrl,
+              num_inference_steps: 30,
+              guidance_scale: 4,
+              output_format: "png",
+            },
+      ),
     });
 
     if (!falRes.ok) {
