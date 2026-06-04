@@ -123,6 +123,15 @@ Session log. Append at the end of every session.
 - **Bohemian landing example regenerated** (`public/examples/proof_boho.jpg`): the old asset had collapsed the room's 3-panel window into 2, breaking the fidelity promise on the landing page. Regenerated from `room-before.jpg` via fal Qwen with the production architecture-lock prompt (added an explicit "three-panel window, keep exactly three panels" clause), generated 3 candidates, picked the faithful one, optimized to 159KB JPEG via sharp. Scandi + Japandi proofs verified faithful (3 panels), left unchanged. Commit `d147813`, deployed. (Note: static asset, same filename → users may need a hard refresh.)
 - Reusable learning: for landing/marketing example images, prompt should name the exact window panel count; generation can still drift on architecture, so generate a few candidates and eyeball-pick.
 
+## Session 4 (cont.) — Auth UX pass (sign-in flow)
+- Bugs/asks from Liyang's QA of the auth flow, all fixed + deployed:
+  - **"Sign out" showed for guests** (red, and clicking it opened the sign-in sheet). Now shows **"Sign in"** when no user, "Sign out" only when signed in. (`AccountScreen.tsx`)
+  - **Google button** now uses the **official multicolor Google logo** (was a blue "G" monogram). `BrandBtn` gained an optional `icon` slot; `GoogleGMark` SVG in `Sheet.tsx`.
+  - **WeChat login removed** (Liyang's call) — it was a "Soon" placeholder, not built (real WeChat web login needs a registered company + WeChat Open Platform app).
+  - **Email sign-in streamlined from magic-link → in-app 6-digit OTP code**: user reads a code from the email and types it in the app (no leaving the app, no fragile redirect — much better on mobile/PWA). `authService.verifyEmailOtp` added (`supabase.auth.verifyOtp type:"email"`); `signIn('email')` sends the code (no emailRedirectTo). Supabase magic-link email template updated via Management API to feature `{{ .Token }}`, subject "Your Roomora sign-in code". AuthModal is now a 2-step sheet (email → code) with resend / change-email.
+- **Auth config facts (live):** email + Google enabled; `mailer_autoconfirm=false`; **no custom SMTP** → built-in email **capped at 2 emails/hour** (project-wide) and can't be raised without SMTP (confirmed: PATCH of rate_limit_email_sent rejected without SMTP). Google may show an "unverified app" warning until Google verifies the app (needs privacy policy + submission).
+- **OPEN / RECOMMENDED — email deliverability:** for real RedNote volume (and Chinese inboxes qq.com/163.com), set up **custom SMTP (Resend)** in Supabase Auth. Pairs well with the deferred custom domain (deliverability). Liyang leaned "email is the way" but was lukewarm on Resend; needs a Resend account (his action) to wire. Until then the OTP flow works but is throttled to 2/hour.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
