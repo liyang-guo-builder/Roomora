@@ -199,6 +199,12 @@ Session log. Append at the end of every session.
 - **These are starter templates, NOT legal advice** — Liyang to have reviewed before relying on them. Contact emails referenced: `hello@room-ora.com` (terms) + `privacy@room-ora.com` (privacy) → **ACTION: set up forwarding for these at the domain registrar** (mailboxes don't exist yet). Effective date placeholder "June 2026". Entity = "Roomora, France" (refine with registered entity on incorporation).
 - These unblock: **Stripe live payments** (ToS) + **Google OAuth app verification** (needs a public privacy-policy URL → now have `room-ora.com/privacy`).
 
+## Session 4 (cont.) — Fidelity fix for Nano Banana (architecture-lock hardened)
+- Liyang caught it: Nano Banana restyle was **flattening the recessed window bay + dropping the brass rod** on the test room (real fidelity break; the prompt was NOT loosened — it's the engine being more liberal than Qwen, the flagged tradeoff).
+- Fix: **hardened `ARCHITECTURE_LOCK`** (prompts.ts) — explicitly preserve window panel count/positions/proportions, the recessed bay/reveal, rods/rails, skirting, alcoves, wall columns; forbid flatten/square-off/re-frame/re-proportion. Commit `ee6e329`, deployed.
+- Verified on prod (real newchinese restyle via Nano Banana): window bay + rod + 3 panels + shelf niche + parquet all preserved, styling still beautiful. Fix holds.
+- Caveat: Nano Banana is still inherently a touch more liberal than Qwen. Watch fidelity across diverse real rooms in the QA sweep. **Fallback if needed: revert restyle to Qwen** (one-line engine swap in /api/generate) for guaranteed structure at slightly lower beauty.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
