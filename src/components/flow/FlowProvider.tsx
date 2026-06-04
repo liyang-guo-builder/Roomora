@@ -23,7 +23,7 @@ import {
   InsufficientCreditsError,
   StripeNotConfiguredError,
 } from "@/lib/services";
-import type { AuthReason, ModalKind, PayMethod } from "@/lib/types";
+import type { AuthReason, ModalKind } from "@/lib/types";
 import type { IconName } from "@/components/ui";
 
 interface ToastState {
@@ -47,7 +47,7 @@ interface FlowContextValue {
   doDownload: (url?: string | null) => void;
   doApplyRefine: (note: string) => Promise<void>;
   onAuthed: (provider: "google" | "email", email?: string) => Promise<void>;
-  doPurchase: (packIndex: number, method: PayMethod) => Promise<void>;
+  doPurchase: (packIndex: number) => Promise<void>;
 }
 
 const FlowContext = createContext<FlowContextValue | null>(null);
@@ -314,13 +314,14 @@ export function FlowProvider({ children }: { children: ReactNode }) {
   );
 
   const doPurchase = useCallback(
-    async (packIndex: number, method: PayMethod) => {
+    async (packIndex: number) => {
       // Real payment: ask the server for a Stripe Checkout url and redirect.
-      // Credits are granted server-side by the webhook on payment success, so
-      // we do NOT bump the balance here. On returning to /account?purchase=
-      // success the balance refetches from the server.
+      // The payment method (card / WeChat Pay / Alipay) is chosen on Stripe's
+      // hosted page, not here. Credits are granted server-side by the webhook on
+      // payment success, so we do NOT bump the balance here. On returning to
+      // /account?purchase=success the balance refetches from the server.
       try {
-        const { checkoutUrl } = await paymentService.purchase(packIndex, method);
+        const { checkoutUrl } = await paymentService.purchase(packIndex);
         if (checkoutUrl) {
           window.location.href = checkoutUrl;
           return;
@@ -334,7 +335,7 @@ export function FlowProvider({ children }: { children: ReactNode }) {
         // so nothing crashes and the flow stays demoable.
       }
 
-      const { added } = await mockPaymentService.purchase(packIndex, method);
+      const { added } = await mockPaymentService.purchase(packIndex);
       const amount = added ?? 0;
       try {
         const newBalance = await creditsService.grant(amount);

@@ -6,7 +6,6 @@ import { useStore } from "@/lib/store";
 import { Btn, Icon, Hex } from "@/components/ui";
 import { useFlow } from "@/components/flow/FlowProvider";
 import { paymentService } from "@/lib/services";
-import type { PayMethod } from "@/lib/types";
 import { Sheet } from "./Sheet";
 
 const PACKS = paymentService.packs;
@@ -16,13 +15,7 @@ export function BuyModal({ forceOut }: { forceOut: boolean }) {
   const { closeModal, doPurchase } = useFlow();
   const credits = useStore((s) => s.credits);
   const [sel, setSel] = useState(1);
-  const [pay, setPay] = useState<PayMethod>("card");
   const out = forceOut || credits === 0;
-
-  const methods: [PayMethod, string, string, string, string][] = [
-    ["card", "#635BFF", "€", t("Card", "银行卡"), "Stripe · EUR"],
-    ["wechat", "#07C160", "W", t("WeChat Pay", "微信支付"), "CNY"],
-  ];
 
   return (
     <Sheet
@@ -70,7 +63,7 @@ export function BuyModal({ forceOut }: { forceOut: boolean }) {
             </div>
             <div className="ml-auto text-right shrink-0">
               <div className="text-[16px] font-semibold text-ink">
-                {pay === "card" ? `€${p.eur}` : `¥${p.cny}`}
+                {`€${p.eur}`}
               </div>
               <div className="text-[11px] text-ink-3">
                 €{(p.eur / p.c).toFixed(2)}/{t("ea", "个")}
@@ -87,42 +80,20 @@ export function BuyModal({ forceOut }: { forceOut: boolean }) {
         ))}
       </div>
 
-      {/* payment method */}
-      <div className="grid grid-cols-2 gap-2.5 mt-4">
-        {methods.map(([k, tone, mono, lab, sub]) => (
-          <button
-            key={k}
-            onClick={() => setPay(k)}
-            className={`flex items-center gap-2.5 p-3 rounded-[14px] border-2 transition-all ${
-              pay === k ? "border-sage bg-sage-tint/40" : "border-line bg-surface"
-            }`}
-          >
-            <span
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[13px] font-bold text-white shrink-0"
-              style={{ background: tone }}
-            >
-              {mono}
-            </span>
-            <div className="text-left min-w-0">
-              <div className="text-[13.5px] font-semibold text-ink truncate">{lab}</div>
-              <div className="text-[10.5px] text-ink-3">{sub}</div>
-            </div>
-          </button>
-        ))}
-      </div>
-
       <Btn
         variant="primary"
         size="lg"
         full
-        className="mt-4"
-        onClick={() => void doPurchase(sel, pay)}
+        className="mt-5"
+        onClick={() => void doPurchase(sel)}
       >
-        {t("Pay", "支付")} {pay === "card" ? `€${PACKS[sel].eur}` : `¥${PACKS[sel].cny}`} ·{" "}
-        {PACKS[sel].c} {t("credits", "积分")}
+        {t("Pay", "支付")} €{PACKS[sel].eur} · {PACKS[sel].c} {t("credits", "积分")}
       </Btn>
       <p className="text-center text-[11.5px] text-ink-3 mt-3">
-        {t("Secure checkout · cancel anytime", "安全支付 · 随时取消")}
+        {t(
+          "Pay by card, WeChat Pay or Alipay · secure checkout",
+          "支持银行卡、微信支付或支付宝 · 安全结账",
+        )}
       </p>
     </Sheet>
   );

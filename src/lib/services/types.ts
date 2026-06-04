@@ -76,7 +76,7 @@ export interface PurchaseResult {
 
 export interface PaymentService {
   packs: CreditPack[];
-  purchase(packIndex: number, method: "card" | "wechat"): Promise<PurchaseResult>;
+  purchase(packIndex: number): Promise<PurchaseResult>;
 }
 
 export interface DesignsService {
