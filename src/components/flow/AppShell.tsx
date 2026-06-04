@@ -49,9 +49,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { modal, authReason, forceOut, toast, openModal } = useFlow();
   const showNav = NAV_ROUTES.includes(pathname);
 
-  // Public share pages render full-width, outside the mobile app chrome
-  // (no phone frame, header, bottom nav, or in-app modals).
-  if (pathname?.startsWith("/share")) {
+  // Public/standalone pages render full-width, outside the mobile app chrome
+  // (no phone frame, header, bottom nav, or in-app modals): the share pages
+  // and the legal pages (long-form, readable).
+  const bare = ["/share", "/terms", "/privacy"];
+  if (pathname && bare.some((r) => pathname.startsWith(r))) {
     return <>{children}</>;
   }
 

@@ -177,10 +177,15 @@ export function AuthModal({ reason }: { reason: AuthReason }) {
           : t("New here? Create an account", "还没有账号？注册")}
       </button>
       <p className="text-center text-[11px] text-ink-3 mt-3 leading-relaxed">
-        {t(
-          "By continuing you agree to our Terms & Privacy.",
-          "继续即表示同意我们的条款与隐私政策。",
-        )}
+        {t("By continuing you agree to our", "继续即表示同意我们的")}{" "}
+        <a href="/terms" target="_blank" rel="noopener" className="underline">
+          {t("Terms", "条款")}
+        </a>{" "}
+        {t("and", "和")}{" "}
+        <a href="/privacy" target="_blank" rel="noopener" className="underline">
+          {t("Privacy Policy", "隐私政策")}
+        </a>
+        .
       </p>
     </Sheet>
   );

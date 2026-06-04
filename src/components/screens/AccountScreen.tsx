@@ -175,7 +175,20 @@ export function AccountScreen() {
           </div>
         </div>
         <Row icon="info" label={t("Billing history", "账单记录")} value={t("None yet", "暂无")} onClick={() => {}} />
-        <Row icon="lock" label={t("Privacy", "隐私设置")} onClick={() => {}} />
+        <Row
+          icon="lock"
+          label={t("Privacy Policy", "隐私政策")}
+          onClick={() => {
+            window.location.href = "/privacy";
+          }}
+        />
+        <Row
+          icon="info"
+          label={t("Terms of Service", "服务条款")}
+          onClick={() => {
+            window.location.href = "/terms";
+          }}
+        />
       </div>
 
       <div className="mt-4 rounded-[20px] bg-surface border border-line/70 shadow-card overflow-hidden">
