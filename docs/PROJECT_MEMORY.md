@@ -173,6 +173,12 @@ Session log. Append at the end of every session.
 - **RedNote collection lesson:** used `/rednote` skill (cookie auth OK, got Scandinavian results + screenshot), but the **2nd search tripped the anti-bot flag** (安全限制 / IP存在风险 300012) and I stopped per guardrail. Web automation is NOT reliable for bulk collection. Going forward: collect references via the **phone app** (save beautiful rooms → drop in `references/_images/<style>/`) then Claude captions them to extract descriptors; or very short infrequent web sessions.
 - Future quality levers noted (not done): engine bake-off (Qwen vs Nano Banana/Gemini/Seedream for aesthetics); use match-a-photo with curated refs per style; generate-N + aesthetic re-rank.
 
+## Session 4 (cont.) — Descriptor upgrade shipped + visual-conditioning finding + bake-off plan
+- **Reference collection:** Liyang saved ~5 images/style (all 10 styles, 61 files) at `gtm-assets/references/Images/` via real-Chrome session (clean IP, no ban). Descriptors distilled into `gtm-assets/references/descriptors.md`.
+- **Upgraded all 10 STYLE_PROMPTS** (`src/lib/prompts.ts`, commit `78d2102`, deployed) with the collected specifics (signature pieces, palettes, lighting, mood), **filtered to remove architectural elements** (concrete ceiling, lattice screen, floor-to-ceiling window, slatted accent wall). Spot-checked industrial + new-chinese on the real room: walls/windows/floor preserved (lock held against "concrete grey"), output more designed.
+- **Visual-conditioning experiment** (`gtm-assets/references/_experiments/japandi_A_descriptor-only.png` vs `_B_reference-conditioned.png`): feeding a curated reference image via match-a-photo ≈ descriptor-only quality. **Why:** our match-a-photo CAPTIONS the image to text first (to avoid the architecture leakage learned earlier), so both paths are text→Qwen. Conclusion: for the current engine, rich descriptions are essentially enough; the ceiling is **Qwen itself**, not the prompt.
+- **Engine bake-off READY on the existing fal key** (fal is a unified gateway, no new keys): candidates = FLUX.1 Kontext [pro] ($0.04), Seedream 4/5 Edit ($0.035), Nano Banana 2 Edit ($0.08), vs current Qwen-Image-Edit. Test = same room + same prompt, judge on beauty AND architecture fidelity (our promise). Whole bake-off < $1. TODO: run it, pick the most beautiful that still locks structure.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
