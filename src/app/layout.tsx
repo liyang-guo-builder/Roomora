@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Schibsted_Grotesk, Noto_Sans_SC } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
@@ -20,7 +20,10 @@ export const metadata: Metadata = {
   title: "Roomora · Redesign your real room",
   description:
     "Turn a photo of your real room into a realistically restyled version that stays recognizably your room.",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Roomora" },
 };
+
+export const viewport: Viewport = { themeColor: "#7C8866" };
 
 export default function RootLayout({
   children,

@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AppHeader, Icon } from "@/components/ui";
+import { InstallHint } from "@/components/ui/InstallHint";
 import { useT } from "@/lib/i18n";
 import { useFlow } from "./FlowProvider";
 import { AuthModal } from "@/components/modals/AuthModal";
@@ -67,6 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {modal === "buy" && <BuyModal forceOut={forceOut} />}
         {modal === "share" && <ShareModal />}
         {toast && <Toast icon={toast.icon}>{toast.msg}</Toast>}
+        <InstallHint />
       </div>
     </div>
   );
