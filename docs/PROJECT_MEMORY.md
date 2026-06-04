@@ -205,6 +205,12 @@ Session log. Append at the end of every session.
 - Verified on prod (real newchinese restyle via Nano Banana): window bay + rod + 3 panels + shelf niche + parquet all preserved, styling still beautiful. Fix holds.
 - Caveat: Nano Banana is still inherently a touch more liberal than Qwen. Watch fidelity across diverse real rooms in the QA sweep. **Fallback if needed: revert restyle to Qwen** (one-line engine swap in /api/generate) for guaranteed structure at slightly lower beauty.
 
+## Session 4 (cont.) — Rebalanced architecture-lock (fidelity AND beauty)
+- The hardened lock fixed window drift but **over-corrected**: Nano Banana went timid → sparse/flat rooms (Liyang: "looks less good than even Qwen"). Tradeoff: too loose = walls drift, too strict = styling dies.
+- Fix: **balanced `ARCHITECTURE_LOCK`** — firm + concise on the few things that broke (window panel count/positions/proportions + recessed bay, no flatten/re-frame, keep walls/floor/shelving) but ends on a POSITIVE directive ("then fully and richly furnish this exact room... so it feels complete and beautifully styled"). Commit `aa7afd6`, deployed.
+- Tested on the room (newchinese + boho via NB): window bay + rod + 3 panels + niche preserved AND output rich/warm/beautiful. Sweet spot found. Same prompt-construction + endpoint as prod, so representative.
+- Net of the engine arc: Nano Banana (restyle/match) + balanced lock = beautiful + faithful; Qwen kept for refine; Qwen-revert remains the fidelity fallback if real-room QA shows drift.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
