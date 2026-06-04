@@ -188,6 +188,11 @@ Session log. Append at the end of every session.
 - Conclusion: the "AI look" was mostly the ENGINE, not the prompt. **Recommend switching the restyle (and match-a-photo) engine to Nano Banana**; keep Qwen for refine until we test which handles precise "change only X" edits better (Qwen historically tighter).
 - TODO (pending Liyang go-ahead): wire `fal-ai/nano-banana/edit` into `/api/generate` for the restyle + match paths (swap the fal call: body uses `image_urls:[url]`, response `images[0].url`); keep refine on Qwen for now; verify fidelity with the tester on prod.
 
+## Session 4 (cont.) — Nano Banana wired in (restyle + match) and verified on prod
+- `/api/generate` now branches the engine by mode: **restyle + match → `fal-ai/nano-banana/edit`**, **refine → `fal-ai/qwen-image-edit`** (kept for tighter control). Constants `NANO_BANANA_EDIT_URL` + `QWEN_EDIT_URL`. Nano Banana body = `{prompt, image_urls:[url], output_format}`; both engines return `images[0].url` so persistence unchanged. Every path already passes a public URL. Commit `840ed24`, deployed to room-ora.com.
+- **Verified on prod:** dev-login → real restyle (scandi) on the test room → credit 12→11, result stored in designs bucket, image is warm/editorial with 3-panel window + shelves + parquet preserved. End-to-end Nano Banana confirmed.
+- Open follow-up: test whether refine is better on Nano Banana vs Qwen (precise "change only X"); currently refine stays on Qwen. Bake-off cost confirmed: Nano Banana $0.039/image flat (size-independent), Qwen $0.03/MP (size-scaled).
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
