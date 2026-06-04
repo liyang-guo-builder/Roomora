@@ -193,6 +193,12 @@ Session log. Append at the end of every session.
 - **Verified on prod:** dev-login → real restyle (scandi) on the test room → credit 12→11, result stored in designs bucket, image is warm/editorial with 3-panel window + shelves + parquet preserved. End-to-end Nano Banana confirmed.
 - Open follow-up: test whether refine is better on Nano Banana vs Qwen (precise "change only X"); currently refine stays on Qwen. Bake-off cost confirmed: Nano Banana $0.039/image flat (size-independent), Qwen $0.03/MP (size-scaled).
 
+## Session 4 (cont.) — Terms + Privacy pages
+- Built `/terms` + `/privacy` (App Router pages, shared `LegalPage` chrome, rendered full-width via the AppShell bare-route bypass alongside `/share`). Linked from the auth sheet ("Terms" + "Privacy Policy", bilingual, target=_blank) and the Account screen (Privacy + new Terms rows). Live + verified on prod (200, content correct, clean layout).
+- Privacy policy is **GDPR-aware** and honestly discloses the third-party data flow (uploaded photos go to AI providers): Supabase, fal.ai, Google, MiniMax, Stripe, Vercel; data-controller = Roomora (France); CNIL complaint right; rights/retention/cookies/children covered. Terms cover AI-output-is-approximation, credits non-refundable (digital good) except failures auto-refund, affiliate disclosure, acceptable use, liability, governing law = France.
+- **These are starter templates, NOT legal advice** — Liyang to have reviewed before relying on them. Contact emails referenced: `hello@room-ora.com` (terms) + `privacy@room-ora.com` (privacy) → **ACTION: set up forwarding for these at the domain registrar** (mailboxes don't exist yet). Effective date placeholder "June 2026". Entity = "Roomora, France" (refine with registered entity on incorporation).
+- These unblock: **Stripe live payments** (ToS) + **Google OAuth app verification** (needs a public privacy-policy URL → now have `room-ora.com/privacy`).
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
