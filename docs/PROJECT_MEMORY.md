@@ -179,6 +179,15 @@ Session log. Append at the end of every session.
 - **Visual-conditioning experiment** (`gtm-assets/references/_experiments/japandi_A_descriptor-only.png` vs `_B_reference-conditioned.png`): feeding a curated reference image via match-a-photo ≈ descriptor-only quality. **Why:** our match-a-photo CAPTIONS the image to text first (to avoid the architecture leakage learned earlier), so both paths are text→Qwen. Conclusion: for the current engine, rich descriptions are essentially enough; the ceiling is **Qwen itself**, not the prompt.
 - **Engine bake-off READY on the existing fal key** (fal is a unified gateway, no new keys): candidates = FLUX.1 Kontext [pro] ($0.04), Seedream 4/5 Edit ($0.035), Nano Banana 2 Edit ($0.08), vs current Qwen-Image-Edit. Test = same room + same prompt, judge on beauty AND architecture fidelity (our promise). Whole bake-off < $1. TODO: run it, pick the most beautiful that still locks structure.
 
+## Session 4 (cont.) — Engine bake-off: Nano Banana wins
+- Ran same room + same prompt across fal-hosted engines (results in `gtm-assets/references/_experiments/bakeoff/`).
+  - **Nano Banana** (`fal-ai/nano-banana/edit`, Gemini image) = clear winner: warmest, most editorial, richest styling, AND preserved architecture (3-panel window + shelves + parquet) across all 7 renders (scandi, japandi, cream, wabisabi, wood, midcentury, boho). Takes mild creative liberty (added tasteful sheer curtains = decor, fine).
+  - **Qwen** (current) + **FLUX.1 Kontext** (`fal-ai/flux-pro/kontext`): both clean + faithful but flatter/more "rendered."
+  - **Seedream** (`fal-ai/bytedance/seedream/v4/edit`): failed via sync fal.run (needs the async queue API — untested, but we have a winner).
+- **Pricing (verified on fal):** Qwen $0.03/megapixel (~$0.03/image at 1024²); Nano Banana **$0.039/image flat** ($1=25). So Nano Banana is only ~1 cent more — the earlier "2-4x" was the pricier "Nano Banana 2" tier we did NOT use. Cost is a non-issue.
+- Conclusion: the "AI look" was mostly the ENGINE, not the prompt. **Recommend switching the restyle (and match-a-photo) engine to Nano Banana**; keep Qwen for refine until we test which handles precise "change only X" edits better (Qwen historically tighter).
+- TODO (pending Liyang go-ahead): wire `fal-ai/nano-banana/edit` into `/api/generate` for the restyle + match paths (swap the fal call: body uses `image_urls:[url]`, response `images[0].url`); keep refine on Qwen for now; verify fidelity with the tester on prod.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
