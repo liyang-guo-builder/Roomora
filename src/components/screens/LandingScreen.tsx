@@ -55,7 +55,6 @@ export function LandingScreen() {
         ref={fileRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={onFile}
         className="hidden"
       />

@@ -21,6 +21,13 @@ export const metadata: Metadata = {
   description:
     "Turn a photo of your real room into a realistically restyled version that stays recognizably your room.",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Roomora" },
+  // Serve the home-screen icon at the classic clean path (no hashed query) that
+  // iOS Safari probes + caches; helps it pick up the real colorful mark instead
+  // of an auto-generated letter fallback.
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = { themeColor: "#7C8866" };
