@@ -226,6 +226,11 @@ Session log. Append at the end of every session.
 - **App icon = the real designed logo now.** The earlier icons were a white knockout that read as a plain "R". Regenerated apple-icon/icon/icon-192/icon-512 from `gtm-assets/logo-3green.svg` as the **3-green colorful mark on paper**. Removed the stale scaffold `favicon.ico` (grey R) → new `icon.png` is the favicon everywhere (verified: favicon.ico 404, icon.png/apple-icon.png 200). NOTE: iOS/Android cache an already-installed home-screen icon → user must REMOVE + RE-ADD to home screen to see it; the browser TAB updates immediately on reload (quick way to confirm the new icon).
 - Built by a dev sub-agent (Part 1) + orchestrator (icons, store migration, review). Gates green. Commit `bedea56`.
 
+## Session 4 (cont.), Photo-picker bug + iOS icon caching
+- **Photo picker bug FIXED:** room-photo inputs in LandingScreen + SetupScreen had `capture="environment"` → forced the camera and hid the photo library on mobile. Removed it; now offers Library/Camera/Browse. Commit `131aa3c`, deployed.
+- **iOS home-screen icon still showed "R":** confirmed prod serves the correct colorful 3-green icon (apple-icon/apple-touch-icon = the mark, verified by fetching+viewing). The "R" is iOS auto-generating a fallback tile (name initial on theme color) from a cached/stale state, a device caching issue, NOT a code bug. Mitigation deployed: serve the icon at the classic clean path `/apple-touch-icon.png` (+ precomposed), point `metadata.icons.apple` there, and drop the hashed src/app/apple-icon.png → fresh never-cached URL. Verified: `/apple-touch-icon.png` 200, head emits `<link rel=apple-touch-icon href=/apple-touch-icon.png>`.
+- **User action for the icon:** iOS caches the home-screen icon hard. If it still shows R after this deploy: Settings → Safari → Clear History and Website Data (or clear for room-ora.com), then reopen room-ora.com → Share → Add to Home Screen. Code side is provably correct.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
