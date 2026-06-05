@@ -238,6 +238,9 @@ Session log. Append at the end of every session.
   - User testing on cellular next (expected to work).
 - **Launch consideration (flagged):** images are served from Supabase (AWS) on a different domain. On restrictive networks (e.g., mainland China / RedNote audience) this can be blocked/slow. Future fix if needed: proxy generated images through the app's own domain (room-ora.com) and/or a China-edge CDN. Not a bug; a robustness/distribution item.
 
+## Session 4 (cont.), Download fix
+- **Download now actually saves the image.** Old handler used a cross-origin `<a download>` (browsers ignore it → opened the image in a new tab). New `doDownload` (FlowProvider) fetches the bytes (Supabase CORS = `*`, confirmed) → on touch devices uses Web Share (`navigator.share({files})`) so the user taps "Save Image" to the photo gallery; on desktop triggers a real blob download to Downloads. Graceful fallbacks (share-cancel = no-op; fetch error = open + "long-press to save"). Commit `b3cf0b1`, deployed.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
