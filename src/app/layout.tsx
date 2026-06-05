@@ -28,6 +28,11 @@ export const metadata: Metadata = {
     icon: "/icon.png",
     apple: "/apple-touch-icon.png",
   },
+  // Awin affiliate-network ownership verification marker. Invisible to users,
+  // readable by Awin's crawler to confirm we control this domain.
+  other: {
+    "awin-site-verification": "room-ora.com",
+  },
 };
 
 export const viewport: Viewport = { themeColor: "#7C8866" };
