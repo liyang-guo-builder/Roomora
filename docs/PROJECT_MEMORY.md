@@ -211,6 +211,14 @@ Session log. Append at the end of every session.
 - Tested on the room (newchinese + boho via NB): window bay + rod + 3 panels + niche preserved AND output rich/warm/beautiful. Sweet spot found. Same prompt-construction + endpoint as prod, so representative.
 - Net of the engine arc: Nano Banana (restyle/match) + balanced lock = beautiful + faithful; Qwen kept for refine; Qwen-revert remains the fidelity fallback if real-room QA shows drift.
 
+## Session 4 (cont.) — Pre-launch QA sweep (driven inline; tester subagent stalled)
+- Background tester subagent hung (0-byte output for >1h) → killed, ran QA inline via /browse on the LIVE site. No functional bugs found.
+- **PASS:** Landing (desktop framed device + mobile, no console errors); Account/auth UI (signed in, correct "Sign out" label, Privacy + Terms rows); Buy modal (single "Pay €12 · 60 credits", no Card/WeChat toggle, no CNY); Stripe checkout page (EUR €12, methods = Card + WeChat Pay + Alipay, no SGD chooser, no prominent "Pay with Link"); upload → Setup (10 styles + note + budget); Generate → Result (~21s, credit spent, result screen complete); **fidelity (Scandinavian, full UI): window bay + brass rod + shelves + parquet preserved AND beautiful** (balanced lock holds through the real app); bilingual 中文 (renders, no overflow); legal pages 200.
+- **Could not auto-complete the test purchase:** Stripe now gates headless browsers with an "Agent Identity Token / I am an AI agent" guard (not a product bug; a real human never sees it; full 5→65 purchase already verified earlier this session).
+- **Cosmetic only:** console warnings (`<link rel=preload>` unsupported `as`, WebGL GPU-stall) — harmless; "Billing history: None yet" still a placeholder.
+- **Not covered this pass (recommend before launch):** refine flow in UI, Save→My Designs click-through, /share page, match-a-photo UI, forgot-password send, and especially **fidelity across DIFFERENT room types** — we only have ONE real test room. ACTION: Liyang to provide 3-5 varied real room photos (different window types/layouts) to stress-test fidelity, since Nano Banana is a touch liberal and fidelity is the core promise.
+- Verdict: **launch-ready on the core**; no critical/high bugs. Remaining: multi-room fidelity check + Stripe go-live.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
