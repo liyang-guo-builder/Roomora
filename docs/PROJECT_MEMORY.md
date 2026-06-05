@@ -231,6 +231,13 @@ Session log. Append at the end of every session.
 - **iOS home-screen icon still showed "R":** confirmed prod serves the correct colorful 3-green icon (apple-icon/apple-touch-icon = the mark, verified by fetching+viewing). The "R" is iOS auto-generating a fallback tile (name initial on theme color) from a cached/stale state, a device caching issue, NOT a code bug. Mitigation deployed: serve the icon at the classic clean path `/apple-touch-icon.png` (+ precomposed), point `metadata.icons.apple` there, and drop the hashed src/app/apple-icon.png → fresh never-cached URL. Verified: `/apple-touch-icon.png` 200, head emits `<link rel=apple-touch-icon href=/apple-touch-icon.png>`.
 - **User action for the icon:** iOS caches the home-screen icon hard. If it still shows R after this deploy: Settings → Safari → Clear History and Website Data (or clear for room-ora.com), then reopen room-ora.com → Share → Add to Home Screen. Code side is provably correct.
 
+## Session 4 (cont.), Entry-point signup prompt + phone-network diagnosis
+- **UX: out-of-trial anon now prompted to sign up at the ENTRY points** (Landing "Add a photo", Result "Try another room" + "Refine") instead of only at the final Generate step. Opens the auth sheet (reason "free" = "Sign up to get 3 more designs"). Server enforcement unchanged. Commit `c1596d0`, deployed.
+- **Phone "Connection Not Private / Not Secure / blank image" diagnosed = the user's WiFi network, NOT the app.** Cert/DNS verified correct globally (Vercel-managed domain, valid Let's Encrypt cert covering room-ora.com, A records → Vercel, CAA allows issuer; my TLS handshake + Google DoH both clean). The phone got cert warnings on BOTH room-ora.com AND `wakijejhpprftavrwipd.supabase.co` (the image host) → the WiFi is interfering with HTTPS to these (likely a 1-day-old-domain DNS lag or a filtered/UTC+8 network). Everything works on the computer.
+  - **Proof the engine is fine:** the user's Japandi generation is in the DB (status done) and the result is a valid 1.5MB PNG of their real room (glass-balcony apartment), restyled beautifully, architecture preserved. Loads 200 from a clean network.
+  - User testing on cellular next (expected to work).
+- **Launch consideration (flagged):** images are served from Supabase (AWS) on a different domain. On restrictive networks (e.g., mainland China / RedNote audience) this can be blocked/slow. Future fix if needed: proxy generated images through the app's own domain (room-ora.com) and/or a China-edge CDN. Not a bug; a robustness/distribution item.
+
 ## Open threads
 - Engine choice pending spike (MiniMax vs Qwen). Needs MINIMAX_API_KEY + FAL_KEY + 3–5 room photos.
 - Supabase project not yet created (Phase 2).
