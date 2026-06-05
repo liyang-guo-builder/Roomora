@@ -78,7 +78,7 @@ export function ShareView({
           {t("Design your own room, free", "免费设计你的房间")}
         </Link>
         <p className="text-center text-[12px] text-ink-3 mt-2.5">
-          {t("3 free designs · no signup needed", "3 张免费设计 · 无需注册")}
+          {t("1 free design, no signup", "1 次免费设计，无需注册")}
         </p>
 
         {/* trust strip */}

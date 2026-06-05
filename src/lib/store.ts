@@ -22,8 +22,10 @@ export interface SessionUser {
   email: string | null;
 }
 
-/** Free designs an anonymous (signed-out) user gets before sign-in is required. */
-export const ANON_TRIAL_MAX = 3;
+/** Free designs an anonymous (signed-out) user gets before sign-in is required.
+ *  The SERVER is the real gate (device cookie + IP, see /api/generate); this is
+ *  the client display hint. Anonymous users get exactly 1 free try. */
+export const ANON_TRIAL_MAX = 1;
 
 interface RoomoraState {
   /* ── persisted global state ── */
@@ -123,6 +125,17 @@ export const useStore = create<RoomoraState>()(
     {
       name: "roomora",
       storage: createJSONStorage(() => localStorage),
+      // Bumped to 1 when the anon free trial went 3 → 1. Migration caps any
+      // stale cached "anonTrialRemaining" (e.g. 3) at the new max so returning
+      // visitors don't see an over-promised pill. (Server is the real gate.)
+      version: 1,
+      migrate: (persisted: unknown) => {
+        const p = (persisted ?? {}) as { anonTrialRemaining?: number };
+        return {
+          ...(p as object),
+          anonTrialRemaining: Math.min(p.anonTrialRemaining ?? ANON_TRIAL_MAX, ANON_TRIAL_MAX),
+        } as RoomoraState;
+      },
       // Only the global state persists, matching the prototype's localStorage shape.
       partialize: (s) => ({
         lang: s.lang,

@@ -21,8 +21,8 @@ export function AuthModal({ reason }: { reason: AuthReason }) {
   const subs: Record<AuthReason, string> = {
     save: t("Save your design and get 3 free credits.", "保存你的设计，再得 3 个免费积分。"),
     free: t(
-      "You’ve used your free design. Sign in to keep going and get 3 free credits.",
-      "免费设计已用完，登录即可继续，并获得 3 个免费积分。",
+      "You’ve used your free try. Sign up to get 3 more designs.",
+      "免费试用已用完，注册即可再得 3 次设计。",
     ),
     default: t("Save your design and get 3 free credits.", "保存你的设计，再得 3 个免费积分。"),
   };

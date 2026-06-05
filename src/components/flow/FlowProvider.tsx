@@ -21,6 +21,7 @@ import {
   designsService,
   forceNextGenerationFailure,
   InsufficientCreditsError,
+  AnonTrialUsedError,
   StripeNotConfiguredError,
 } from "@/lib/services";
 import type { AuthReason, ModalKind } from "@/lib/types";
@@ -113,8 +114,9 @@ export function FlowProvider({ children }: { children: ReactNode }) {
       inspirationBase64: isMatch ? inspirationPhoto : null,
     };
 
-    // Anonymous trial: a few free designs (no signup, no server credit).
-    // The free design is consumed only on SUCCESS. (Server allows anon; client gates.)
+    // Anonymous trial: 1 free design, no signup. The SERVER is the gate
+    // (device cookie + IP, see /api/generate); the client counter is just a
+    // display hint. The free design is consumed only on SUCCESS.
     if (anon) {
       if (anonTrialRemaining <= 0) {
         openModal("auth", { reason: "free" });
@@ -126,7 +128,12 @@ export function FlowProvider({ children }: { children: ReactNode }) {
         consumeAnonTrial();
         setResult(result);
         router.push("/result");
-      } catch {
+      } catch (err) {
+        if (err instanceof AnonTrialUsedError) {
+          // Server says the free trial is used up → prompt sign-up.
+          openModal("auth", { reason: "free" });
+          return;
+        }
         router.push("/error"); // no free design consumed → nothing to refund
       }
       return;
@@ -234,7 +241,11 @@ export function FlowProvider({ children }: { children: ReactNode }) {
           setResult(result);
           appendVersion(newest);
           router.push("/result");
-        } catch {
+        } catch (err) {
+          if (err instanceof AnonTrialUsedError) {
+            openModal("auth", { reason: "free" });
+            return;
+          }
           router.push("/error");
         }
         return;

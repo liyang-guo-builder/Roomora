@@ -10,7 +10,7 @@ import type {
   GenerateInput,
   RefineInput,
 } from "./types";
-import { InsufficientCreditsError } from "./types";
+import { InsufficientCreditsError, AnonTrialUsedError } from "./types";
 import type { GenerationResult, GenerationVersion } from "../types";
 
 interface GenerateResponse {
@@ -26,7 +26,11 @@ async function callGenerate(payload: Record<string, unknown>): Promise<GenerateR
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (res.status === 402) throw new InsufficientCreditsError();
+  if (res.status === 402) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    if (body.error === "anon_trial_used") throw new AnonTrialUsedError();
+    throw new InsufficientCreditsError();
+  }
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     throw new Error((detail as { detail?: string }).detail ?? "generation_failed");

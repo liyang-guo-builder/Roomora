@@ -35,7 +35,7 @@ export function LandingScreen() {
     <div className="px-5 pb-8 pt-3">
       <div className="inline-flex items-center gap-1.5 text-[12px] font-medium text-sage bg-sage-tint px-3 py-1.5 rounded-full mb-5">
         <Icon name="sparkle" size={14} />{" "}
-        {t("First design free · no signup", "首张设计免费 · 无需注册")}
+        {t("1 free try · no signup", "1 次免费试用 · 无需注册")}
       </div>
 
       <h1 className="text-[30px] leading-[1.12] font-semibold tracking-[-.02em] text-ink text-balance">
@@ -75,6 +75,12 @@ export function LandingScreen() {
       </button>
       <p className="text-center text-[11.5px] text-ink-3 mt-2.5">
         {t("JPG or PNG · your photo is private", "JPG 或 PNG · 照片仅你可见")}
+      </p>
+      <p className="text-center text-[12px] text-ink-2 mt-3">
+        {t(
+          "1 free try, no signup · sign up for 3 more · then buy credits",
+          "1 次免费试用，无需注册 · 注册再送 3 次 · 之后购买点数",
+        )}
       </p>
 
       {/* interactive proof — same room, switch styles, drag to compare */}

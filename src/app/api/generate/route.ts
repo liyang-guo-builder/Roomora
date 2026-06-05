@@ -11,6 +11,27 @@ import type { StyleId, BudgetId } from "@/lib/types";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// ── Anonymous (signed-out) free-trial caps (server-enforced) ──
+// Best-effort anti-abuse: a device cookie + IP gate. Clearing cookies,
+// incognito, or a fresh IP can still reset this — the goal is stopping casual
+// replay of the free trial, NOT perfect enforcement.
+const ANON_FREE_PER_DEVICE = 1; // total free generations per device cookie
+const ANON_FREE_PER_IP = 3; // free generations per IP per rolling 24h
+const RA_DID_COOKIE = "ra_did";
+const RA_DID_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+
+/** Attach the anon device-id cookie to a response and return it. */
+function withDeviceCookie(res: NextResponse, deviceId: string): NextResponse {
+  res.cookies.set(RA_DID_COOKIE, deviceId, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: RA_DID_MAX_AGE,
+  });
+  return res;
+}
+
 // Restyle + match-a-photo use Nano Banana (Gemini image) — clearly more
 // beautiful in the bake-off, ~$0.039/image, architecture preserved. Refine
 // stays on Qwen-Image-Edit for tighter "change only X" control.
@@ -132,11 +153,23 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   const admin = createAdminClient();
 
+  // ── Anonymous device id (httpOnly cookie). ──
+  // Read the existing ra_did cookie; mint one if absent. We MUST set this on the
+  // responses we return for anon requests (success + the anon-limit 402).
+  const deviceId =
+    request.cookies.get(RA_DID_COOKIE)?.value || crypto.randomUUID();
+
+  // Client IP (first hop of x-forwarded-for, then x-real-ip).
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    null;
+
   // ── Credit logic (server-authoritative). ──
   // Signed in: spend 1 credit BEFORE calling fal; refund on failure.
-  // Anonymous: allowed (client enforces the 1-free trial).
-  // TODO(phase-hardening): enforce the anonymous free-trial server-side too
-  // (e.g. by device/IP) so the trial can't be replayed by clearing localStorage.
+  // Anonymous: server-enforced free trial (device cookie + IP), best-effort
+  // anti-abuse — see the ANON_FREE_* constants above. The free row is recorded
+  // only on SUCCESS, so failures don't burn the trial.
   let balance: number | null = null;
   let creditSpent = false;
   if (user) {
@@ -150,6 +183,36 @@ export async function POST(request: NextRequest) {
     }
     balance = data as number;
     creditSpent = true;
+  } else {
+    // Anonymous: count prior free trials BEFORE generating. Admin client
+    // (service role) bypasses RLS on anon_trials.
+    const sinceIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    const { count: deviceCount } = await admin
+      .from("anon_trials")
+      .select("id", { count: "exact", head: true })
+      .eq("device_id", deviceId);
+
+    let ipCount = 0;
+    if (ip) {
+      const { count } = await admin
+        .from("anon_trials")
+        .select("id", { count: "exact", head: true })
+        .eq("ip", ip)
+        .gt("created_at", sinceIso);
+      ipCount = count ?? 0;
+    }
+
+    if (
+      (deviceCount ?? 0) >= ANON_FREE_PER_DEVICE ||
+      ipCount >= ANON_FREE_PER_IP
+    ) {
+      // Distinct from insufficient_credits: the anon free trial is used up.
+      return withDeviceCookie(
+        NextResponse.json({ error: "anon_trial_used" }, { status: 402 }),
+        deviceId,
+      );
+    }
   }
 
   // Helper to refund the spent credit on any downstream failure.
@@ -302,19 +365,28 @@ export async function POST(request: NextRequest) {
       .single();
     if (insErr || !row) throw new Error(`insert_failed: ${insErr?.message}`);
 
-    return NextResponse.json({
+    // Record the anon free trial ONLY on success (so failures don't burn it).
+    if (!user) {
+      await admin.from("anon_trials").insert({ device_id: deviceId, ip });
+    }
+
+    const successRes = NextResponse.json({
       generationId: row.id as string,
       originalUrl,
       resultUrl,
       balance,
     });
+    // Set the device cookie on anon success so future requests are gated.
+    return user ? successRes : withDeviceCookie(successRes, deviceId);
   } catch (err) {
     // Anything after a successful spend → refund and report.
     await refundOnFailure();
     const message = err instanceof Error ? err.message : "generation_failed";
-    return NextResponse.json(
+    const errorRes = NextResponse.json(
       { error: "generation_failed", detail: message, balance },
       { status: 500 },
     );
+    // Keep the anon device cookie stable across retries (no trial recorded).
+    return user ? errorRes : withDeviceCookie(errorRes, deviceId);
   }
 }

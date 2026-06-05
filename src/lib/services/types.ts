@@ -62,6 +62,16 @@ export class InsufficientCreditsError extends Error {
   }
 }
 
+/** Raised when an anonymous user has used up their server-enforced free trial
+ *  (HTTP 402, body { error: "anon_trial_used" }). Distinct from
+ *  InsufficientCreditsError: the fix is to sign up, not to buy credits. */
+export class AnonTrialUsedError extends Error {
+  constructor() {
+    super("anon_trial_used");
+    this.name = "AnonTrialUsedError";
+  }
+}
+
 export interface GenerationService {
   /**
    * Submit a generation job. Resolves with a result or rejects on failure.

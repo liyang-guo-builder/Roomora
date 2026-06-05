@@ -1,10 +1,11 @@
 "use client";
 
 /**
- * Anonymous trial: preserves the "first design free · no signup" promise
- * without granting server credits. One free generation per browser, tracked
- * in localStorage. After it's used, a second generation — or any
- * Save/Download/Refine — must prompt sign-in (real server credits take over).
+ * Anonymous trial: client display hint for the "1 free try · no signup"
+ * promise. The SERVER is the real gate now (device cookie + IP, enforced in
+ * /api/generate). One free generation per browser, tracked in localStorage.
+ * After it's used, a second generation, or any Save/Download/Refine, must
+ * prompt sign-up (real server credits take over).
  */
 
 const KEY = "roomora.anonTrialUsed";
