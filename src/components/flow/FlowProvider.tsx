@@ -201,23 +201,51 @@ export function FlowProvider({ children }: { children: ReactNode }) {
   }, [anon, setCurrentSaved, incSaved, showToast, t, openModal]);
 
   const doDownload = useCallback(
-    (url?: string | null) => {
+    async (url?: string | null) => {
       if (anon) {
         openModal("auth", { reason: "save" });
         return;
       }
       const href = url ?? useStore.getState().result?.versions.at(-1)?.resultUrl ?? null;
-      if (href) {
+      if (!href) return;
+      try {
+        // Fetch the image bytes so we can truly save it (a cross-origin <a
+        // download> is ignored by browsers and just opens the image in a tab).
+        const blob = await (await fetch(href)).blob();
+        const file = new File([blob], "roomora-design.png", {
+          type: blob.type || "image/png",
+        });
+        const nav = navigator as Navigator & {
+          canShare?: (d?: { files?: File[] }) => boolean;
+          share?: (d: { files?: File[]; title?: string }) => Promise<void>;
+        };
+        const coarse =
+          typeof window !== "undefined" &&
+          window.matchMedia?.("(pointer: coarse)").matches;
+        // Phone/tablet: native share sheet → "Save Image" to the photo gallery.
+        if (coarse && nav.share && nav.canShare?.({ files: [file] })) {
+          try {
+            await nav.share({ files: [file], title: "Roomora design" });
+          } catch {
+            /* user dismissed the share sheet */
+          }
+          return;
+        }
+        // Desktop: real download to the Downloads folder via a blob URL.
+        const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.href = href;
+        a.href = blobUrl;
         a.download = "roomora-design.png";
-        a.target = "_blank";
-        a.rel = "noopener";
         document.body.appendChild(a);
         a.click();
         a.remove();
+        URL.revokeObjectURL(blobUrl);
+        showToast(t("Saved to your device", "已保存到设备"), "download");
+      } catch {
+        // Last resort: open the image so the user can long-press to save it.
+        window.open(href, "_blank", "noopener");
+        showToast(t("Long-press the image to save it", "长按图片即可保存"), "info");
       }
-      showToast(t("Downloaded", "已下载"), "download");
     },
     [anon, showToast, t, openModal],
   );
