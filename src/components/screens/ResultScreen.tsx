@@ -15,13 +15,30 @@ export function ResultScreen() {
   const { openModal, doSave, doDownload } = useFlow();
   const result = useStore((s) => s.result);
   const anon = useStore((s) => s.anon);
+  const anonTrialRemaining = useStore((s) => s.anonTrialRemaining);
   const currentSaved = useStore((s) => s.currentSaved);
   const setupStyle = useStore((s) => s.setup.style);
   const resetFlow = useStore((s) => s.resetFlow);
 
+  // Out of the free trial → any "start a new design" action prompts sign-up
+  // (which grants 3 more) instead of walking into a dead end.
+  const outOfFree = anon && anonTrialRemaining <= 0;
+
   const startNewRoom = () => {
+    if (outOfFree) {
+      openModal("auth", { reason: "free" });
+      return;
+    }
     resetFlow();
     router.push("/");
+  };
+
+  const startRefine = () => {
+    if (outOfFree) {
+      openModal("auth", { reason: "free" });
+      return;
+    }
+    router.push("/refine");
   };
 
   const versions = result?.versions ?? [];
@@ -154,7 +171,7 @@ export function ResultScreen() {
         </div>
       )}
 
-      <Btn variant="brass" size="lg" full icon="wand" className="mt-3" onClick={() => router.push("/refine")}>
+      <Btn variant="brass" size="lg" full icon="wand" className="mt-3" onClick={startRefine}>
         {t("Refine this design", "继续微调")}
       </Btn>
 

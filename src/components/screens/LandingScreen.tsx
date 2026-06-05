@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { readImageFile } from "@/lib/readImageFile";
 import { Icon } from "@/components/ui";
 import { BeforeAfter } from "@/components/ui/BeforeAfter";
+import { useFlow } from "@/components/flow/FlowProvider";
 
 const EXAMPLES = [
   { id: "scandi", en: "Scandinavian", zh: "北欧风", after: "/examples/proof_scandi.png" },
@@ -17,11 +18,21 @@ const EXAMPLES = [
 export function LandingScreen() {
   const { t, lang } = useT();
   const router = useRouter();
+  const { openModal } = useFlow();
   const setRoomPhoto = useStore((s) => s.setRoomPhoto);
+  const anon = useStore((s) => s.anon);
+  const anonTrialRemaining = useStore((s) => s.anonTrialRemaining);
   const fileRef = useRef<HTMLInputElement>(null);
   const [sel, setSel] = useState(0);
 
-  const openPicker = () => fileRef.current?.click();
+  // Out-of-trial anon: prompt sign-up immediately instead of after upload+setup.
+  const openPicker = () => {
+    if (anon && anonTrialRemaining <= 0) {
+      openModal("auth", { reason: "free" });
+      return;
+    }
+    fileRef.current?.click();
+  };
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
