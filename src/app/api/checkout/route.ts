@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import {
+  getStripe,
+  isStripeConfigured,
+  getActivePaymentMethodTypes,
+} from "@/lib/stripe";
 import { PACKS } from "@/lib/packs";
 
 export const runtime = "nodejs";
@@ -58,6 +62,11 @@ export async function POST(request: NextRequest) {
     new URL(request.url).origin;
 
   const stripe = getStripe();
+  // Offer only the methods the account has ACTIVE (card always; WeChat Pay /
+  // Alipay when their capabilities are live). This keeps checkout working in
+  // live mode before those alt methods clear Stripe review, and picks them up
+  // automatically once active (5-min cache) with no redeploy.
+  const methods = await getActivePaymentMethodTypes();
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     // Charge everyone in EUR. Stripe "Adaptive Pricing" (local-currency
@@ -65,10 +74,12 @@ export async function POST(request: NextRequest) {
     // WeChat Pay / Alipay at checkout. Disable it so those methods show.
     adaptive_pricing: { enabled: false },
     // Explicit method list: Card (covers Apple Pay / Google Pay wallets on
-    // supported devices) plus the China-relevant methods. Omitting "link"
-    // drops Stripe Link from the page.
-    payment_method_types: ["card", "wechat_pay", "alipay"],
-    payment_method_options: { wechat_pay: { client: "web" } },
+    // supported devices) plus the China-relevant methods when active. Omitting
+    // "link" drops Stripe Link from the page.
+    payment_method_types: methods,
+    ...(methods.includes("wechat_pay")
+      ? { payment_method_options: { wechat_pay: { client: "web" as const } } }
+      : {}),
     line_items: [
       {
         quantity: 1,
