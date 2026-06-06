@@ -8,6 +8,7 @@ import {
   STYLE_PROMPTS,
   ARCHITECTURE_LOCK,
   REFINE_LOCK,
+  userOverride,
 } from "@/lib/prompts";
 import { composeRestylePrompt, composeRefinePrompt } from "@/lib/composer";
 import type { StyleId, BudgetId } from "@/lib/types";
@@ -342,7 +343,10 @@ export async function POST(request: NextRequest) {
             note,
             apiKey: minimaxKey,
           });
-          prompt = `${composed} ${ARCHITECTURE_LOCK}`;
+          // Re-assert the user's note LAST (after the lock) so it wins on
+          // recency, mirroring the deterministic path. Without this the lock's
+          // "furnish with free-standing furniture" can override "keep the bed".
+          prompt = `${composed} ${ARCHITECTURE_LOCK} ${userOverride(note)}`;
         } catch (composerErr) {
           console.error("match composer failed, using deterministic prompt:", composerErr);
         }
@@ -361,7 +365,10 @@ export async function POST(request: NextRequest) {
             note,
             apiKey: process.env.MINIMAX_API_KEY,
           });
-          prompt = `${composed} ${ARCHITECTURE_LOCK}`;
+          // Re-assert the user's note LAST (after the lock) so it wins on
+          // recency, mirroring the deterministic path. Without this the lock's
+          // "furnish with free-standing furniture" can override "keep the bed".
+          prompt = `${composed} ${ARCHITECTURE_LOCK} ${userOverride(note)}`;
         } catch (composerErr) {
           console.error("restyle composer failed, using deterministic prompt:", composerErr);
         }

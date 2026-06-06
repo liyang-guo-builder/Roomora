@@ -52,7 +52,7 @@ export const FURNISH =
  *  phrased as a hard override so Nano Banana obeys it even when it conflicts
  *  with the generic style description above (e.g. "keep the bed" vs a style
  *  recipe that would otherwise swap in a sofa). */
-function userOverride(note: string): string {
+export function userOverride(note: string): string {
   return `MOST IMPORTANT — this is a direct instruction from the user and overrides any conflicting suggestion above: ${note}. Honor this exactly. If it asks to keep an existing item, leave that item in its current position and do not remove or replace it.`;
 }
 
