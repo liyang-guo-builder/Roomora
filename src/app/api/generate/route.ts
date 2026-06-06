@@ -5,8 +5,20 @@ import {
   buildRestylePrompt,
   buildRefinePrompt,
   buildMatchPrompt,
+  STYLE_PROMPTS,
+  ARCHITECTURE_LOCK,
+  REFINE_LOCK,
 } from "@/lib/prompts";
+import { composeRestylePrompt, composeRefinePrompt } from "@/lib/composer";
 import type { StyleId, BudgetId } from "@/lib/types";
+
+// LLM prompt composer: when ON, a MiniMax vision call reads the actual room
+// photo + style + budget + the user's note and writes a tailored restyle
+// instruction (we still append ARCHITECTURE_LOCK and fall back to the
+// deterministic template on any failure). Only fires when the user typed
+// something in "anything specific" — that's where it earns its keep. Flip the
+// COMPOSER_ENABLED env var to "true"/"false" to toggle without a code change.
+const COMPOSER_ENABLED = process.env.COMPOSER_ENABLED === "true";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -279,9 +291,31 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Build the prompt. ──
+    // When COMPOSER_ENABLED and there is text to act on, a MiniMax vision call
+    // reads the actual room photo + the user's note and writes a tailored prompt.
+    // The deterministic template is computed FIRST as the guaranteed fallback,
+    // then overwritten only on composer success. Any thrown error leaves the
+    // deterministic prompt in place — strictly additive, never breaking.
     let prompt: string;
     if (mode === "refine") {
+      // Fallback first (always safe).
       prompt = buildRefinePrompt(note);
+      if (COMPOSER_ENABLED && process.env.MINIMAX_API_KEY && note.trim()) {
+        try {
+          // Fetch the parent result to a data URI for reliable MiniMax vision.
+          // A failure here falls back to the deterministic refine prompt.
+          const pbuf = Buffer.from(await (await fetch(inputImageUrl)).arrayBuffer());
+          const refDataUri = `data:image/png;base64,${pbuf.toString("base64")}`;
+          const composed = await composeRefinePrompt({
+            imageRef: refDataUri,
+            instruction: note,
+            apiKey: process.env.MINIMAX_API_KEY,
+          });
+          prompt = `${composed} ${REFINE_LOCK}`;
+        } catch (composerErr) {
+          console.error("refine composer failed, using deterministic prompt:", composerErr);
+        }
+      }
     } else if (mode === "match") {
       // Caption the inspiration's STYLE ONLY via MiniMax (the inspiration image
       // itself NEVER reaches Qwen — only its decor description does, so the user's
@@ -296,9 +330,42 @@ export async function POST(request: NextRequest) {
       const minimaxKey = process.env.MINIMAX_API_KEY;
       if (!minimaxKey) throw new Error("minimax_not_configured");
       const caption = await captionInspiration(body.inspirationBase64, minimaxKey);
+      // Fallback first (always safe).
       prompt = buildMatchPrompt(caption, budget, note);
+      if (COMPOSER_ENABLED && minimaxKey && note.trim()) {
+        try {
+          const imageRef = body.imageBase64 ?? inputImageUrl;
+          const composed = await composeRestylePrompt({
+            imageRef,
+            styleDescriptor: `Match this decor style: ${caption}`,
+            budget,
+            note,
+            apiKey: minimaxKey,
+          });
+          prompt = `${composed} ${ARCHITECTURE_LOCK}`;
+        } catch (composerErr) {
+          console.error("match composer failed, using deterministic prompt:", composerErr);
+        }
+      }
     } else {
+      // Fallback first (always safe).
       prompt = buildRestylePrompt({ style, budget, note });
+      if (COMPOSER_ENABLED && process.env.MINIMAX_API_KEY && note.trim()) {
+        try {
+          // Prefer the data URI when present (MiniMax reads it directly).
+          const imageRef = body.imageBase64 ?? inputImageUrl;
+          const composed = await composeRestylePrompt({
+            imageRef,
+            styleDescriptor: STYLE_PROMPTS[style] ?? STYLE_PROMPTS.scandi,
+            budget,
+            note,
+            apiKey: process.env.MINIMAX_API_KEY,
+          });
+          prompt = `${composed} ${ARCHITECTURE_LOCK}`;
+        } catch (composerErr) {
+          console.error("restyle composer failed, using deterministic prompt:", composerErr);
+        }
+      }
     }
 
     // ── Call the image-edit engine on fal. ──

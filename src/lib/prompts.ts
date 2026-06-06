@@ -97,8 +97,13 @@ export function buildMatchPrompt(
   return parts.join(" ");
 }
 
+/** The refine change-only guardrail, shared by the deterministic builder and the
+ *  composer path so the exact clause is never duplicated or allowed to drift. */
+export const REFINE_LOCK =
+  "Change only what is described; keep everything else in the room exactly the same, including the walls, windows, doors, floor and layout.";
+
 /** Build a refine prompt — the user's instruction verbatim, change-only clause. */
 export function buildRefinePrompt(instruction: string): string {
   const note = instruction.trim();
-  return `${note}. Change only what is described; keep everything else in the room exactly the same, including the walls, windows, doors, floor and layout.`;
+  return `${note}. ${REFINE_LOCK}`;
 }
