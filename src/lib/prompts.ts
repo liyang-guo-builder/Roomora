@@ -45,7 +45,16 @@ const BUDGET_PROMPTS: Record<BudgetId, string> = {
  *  Adds editorial-photography + composition cues that counter the flat, evenly
  *  lit, over-staged "AI" look (lighting, texture, focal point, restrained palette). */
 export const FURNISH =
-  "Furnish and restyle this exact room into a complete, beautifully styled, photorealistic living room worthy of an interior-design magazine: natural directional window light with soft shadows, layered textures, a clear focal point and a restrained, harmonious color palette, shot like editorial interior photography with gentle depth of field and true-to-life materials.";
+  "Furnish and restyle this exact room into a complete, beautifully styled, photorealistic space worthy of an interior-design magazine: keep the room's existing FUNCTION (a bedroom stays a bedroom, a living room stays a living room, an office stays an office), preserve large functional pieces that define that function (such as an existing bed, wardrobe or desk) unless the user asks otherwise, and apply the style to the rest. Natural directional window light with soft shadows, layered textures, a clear focal point and a restrained, harmonious color palette, shot like editorial interior photography with gentle depth of field and true-to-life materials.";
+
+/** Format the user's free-text request ("anything specific") as the single
+ *  highest-priority instruction. Placed LAST in the prompt (recency) and
+ *  phrased as a hard override so Nano Banana obeys it even when it conflicts
+ *  with the generic style description above (e.g. "keep the bed" vs a style
+ *  recipe that would otherwise swap in a sofa). */
+function userOverride(note: string): string {
+  return `MOST IMPORTANT — this is a direct instruction from the user and overrides any conflicting suggestion above: ${note}. Honor this exactly. If it asks to keep an existing item, leave that item in its current position and do not remove or replace it.`;
+}
 
 /** The non-negotiable spatial-fidelity clause — furnish, never rebuild. */
 export const ARCHITECTURE_LOCK =
@@ -61,9 +70,10 @@ export function buildRestylePrompt(args: {
   if (args.budget && BUDGET_PROMPTS[args.budget]) {
     parts.push(BUDGET_PROMPTS[args.budget]);
   }
-  const note = args.note?.trim();
-  if (note) parts.push(`Also: ${note}.`);
   parts.push(ARCHITECTURE_LOCK);
+  // The user's specific request goes LAST, as a hard override (see userOverride).
+  const note = args.note?.trim();
+  if (note) parts.push(userOverride(note));
   return parts.join(" ");
 }
 
@@ -80,9 +90,10 @@ export function buildMatchPrompt(
   if (budget && BUDGET_PROMPTS[budget]) {
     parts.push(BUDGET_PROMPTS[budget]);
   }
-  const trimmedNote = note?.trim();
-  if (trimmedNote) parts.push(`Also: ${trimmedNote}.`);
   parts.push(ARCHITECTURE_LOCK);
+  // The user's specific request goes LAST, as a hard override (see userOverride).
+  const trimmedNote = note?.trim();
+  if (trimmedNote) parts.push(userOverride(trimmedNote));
   return parts.join(" ");
 }
 
