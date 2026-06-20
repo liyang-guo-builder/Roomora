@@ -8,10 +8,13 @@ export type StyleId =
   | "scandi"
   | "japandi"
   | "cream"
+  | "french"
   | "midcentury"
+  | "americanvintage"
   | "wabisabi"
   | "wood"
   | "modern"
+  | "quietluxury"
   | "newchinese"
   | "boho"
   | "industrial";

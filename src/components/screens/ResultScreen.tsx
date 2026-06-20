@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
@@ -42,7 +42,16 @@ export function ResultScreen() {
   };
 
   const versions = result?.versions ?? [];
-  const [activeV, setActiveV] = useState(0);
+  // Default to the NEWEST version. A refine appends a version, so the big image
+  // must follow to the latest one (not stay on the original) — otherwise every
+  // refine "looks unchanged". Initialise to the last index, and jump forward
+  // whenever a new version is appended, while still letting the user tap back.
+  const [activeV, setActiveV] = useState(() => Math.max(0, versions.length - 1));
+  const prevLen = useRef(versions.length);
+  useEffect(() => {
+    if (versions.length > prevLen.current) setActiveV(versions.length - 1);
+    prevLen.current = versions.length;
+  }, [versions.length]);
   const variations = Math.max(1, versions.length || 1);
   const styleId = result?.styleId ?? setupStyle ?? "scandi";
   const [en, zh] = STYLE_NAMES[styleId];

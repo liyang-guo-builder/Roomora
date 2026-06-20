@@ -45,11 +45,36 @@ function withDeviceCookie(res: NextResponse, deviceId: string): NextResponse {
   return res;
 }
 
-// Restyle + match-a-photo use Nano Banana (Gemini image) — clearly more
-// beautiful in the bake-off, ~$0.039/image, architecture preserved. Refine
-// stays on Qwen-Image-Edit for tighter "change only X" control.
-const QWEN_EDIT_URL = "https://fal.run/fal-ai/qwen-image-edit";
+// Every mode (restyle, match-a-photo, refine) uses Nano Banana (Gemini image):
+// the most faithful surgical editor in the bake-off (~$0.039/image, architecture
+// preserved). Refine previously ran on Qwen-Image-Edit for "control", but an
+// engine audit found Qwen silently re-rendered the whole image at lower quality
+// and drifted, while Nano applies discrete edits cleanly and keeps resolution.
 const NANO_BANANA_EDIT_URL = "https://fal.run/fal-ai/nano-banana/edit";
+
+/** Cheap perceptual no-op check: true when the edited image is near-identical to
+ *  its input (mean grayscale pixel diff below a small threshold over a 64x64
+ *  downscale). Best-effort — returns false (assume it changed) on any failure so
+ *  it can never block a generation. */
+async function refineLooksUnchanged(
+  inputUrl: string,
+  outBytes: Buffer,
+): Promise<boolean> {
+  try {
+    const sharp = (await import("sharp")).default;
+    const inBytes = Buffer.from(await (await fetch(inputUrl)).arrayBuffer());
+    const size = { width: 64, height: 64, fit: "fill" as const };
+    const a = await sharp(inBytes).resize(size).grayscale().raw().toBuffer();
+    const b = await sharp(outBytes).resize(size).grayscale().raw().toBuffer();
+    const n = Math.min(a.length, b.length);
+    if (n === 0) return false;
+    let sum = 0;
+    for (let i = 0; i < n; i++) sum += Math.abs(a[i] - b[i]);
+    return sum / n < 4;
+  } catch {
+    return false;
+  }
+}
 
 const CAPTION_PROMPT =
   "Describe ONLY the interior decor style of this room in 2-3 sentences for restyling a different room: colour palette, materials, furniture types, textiles, lighting, plants and mood. Do NOT mention walls, windows, ceiling, doors, room shape or architecture.";
@@ -375,40 +400,49 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Call the image-edit engine on fal. ──
-    // Nano Banana for restyle + match (more beautiful); Qwen for refine (control).
-    const useNanoBanana = mode !== "refine";
-    const falRes = await fetch(useNanoBanana ? NANO_BANANA_EDIT_URL : QWEN_EDIT_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Key ${falKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(
-        useNanoBanana
-          ? { prompt, image_urls: [inputImageUrl], output_format: "png" }
-          : {
-              prompt,
-              image_url: inputImageUrl,
-              num_inference_steps: 30,
-              guidance_scale: 4,
-              output_format: "png",
-            },
-      ),
-    });
-
-    if (!falRes.ok) {
-      const detail = await falRes.text().catch(() => "");
-      throw new Error(`fal_error ${falRes.status}: ${detail.slice(0, 300)}`);
+    // ── Call the image-edit engine on fal (Nano Banana for every mode). ──
+    // Returns the generated PNG bytes. Throws on transport / no-image like a
+    // failed generation so the outer catch refunds + reports.
+    async function runEdit(editPrompt: string): Promise<Buffer> {
+      const r = await fetch(NANO_BANANA_EDIT_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Key ${falKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: editPrompt,
+          image_urls: [inputImageUrl],
+          output_format: "png",
+        }),
+      });
+      if (!r.ok) {
+        const detail = await r.text().catch(() => "");
+        throw new Error(`fal_error ${r.status}: ${detail.slice(0, 300)}`);
+      }
+      const j = (await r.json()) as { images?: { url: string }[] };
+      const u = j.images?.[0]?.url;
+      if (!u) throw new Error("fal_no_image");
+      const pr = await fetch(u);
+      if (!pr.ok) throw new Error(`result_fetch_failed ${pr.status}`);
+      return Buffer.from(await pr.arrayBuffer());
     }
-    const falJson = (await falRes.json()) as { images?: { url: string }[] };
-    const resultRemoteUrl = falJson.images?.[0]?.url;
-    if (!resultRemoteUrl) throw new Error("fal_no_image");
 
-    // ── Fetch the generated PNG bytes and persist to the `designs` bucket. ──
-    const pngRes = await fetch(resultRemoteUrl);
-    if (!pngRes.ok) throw new Error(`result_fetch_failed ${pngRes.status}`);
-    const pngBytes = Buffer.from(await pngRes.arrayBuffer());
+    let pngBytes = await runEdit(prompt);
+
+    // Refine no-op guard: Nano occasionally returns a near-identical image for a
+    // subtle edit (e.g. "make the artwork bigger"). Detect that with a cheap
+    // pixel diff against the input and retry ONCE with an explicit "make it
+    // visible" cue. Best-effort: a failed retry keeps the first result.
+    if (mode === "refine" && (await refineLooksUnchanged(inputImageUrl, pngBytes))) {
+      try {
+        pngBytes = await runEdit(
+          `${prompt} Make this change clearly visible and obvious in the result.`,
+        );
+      } catch (retryErr) {
+        console.error("refine no-op retry failed, keeping first result:", retryErr);
+      }
+    }
     const resultPath = `${user?.id ?? "anon"}/${crypto.randomUUID()}.png`;
     const { error: designErr } = await admin.storage
       .from("designs")
