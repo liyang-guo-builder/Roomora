@@ -44,6 +44,8 @@ export interface ItemizeResult {
 export interface ShopResult {
   generationId: string;
   groups: ShopGroup[];
+  /** Credit balance after the (possibly charged) search; null if not charged. */
+  balance?: number | null;
 }
 
 async function postShop<T>(payload: Record<string, unknown>): Promise<T> {

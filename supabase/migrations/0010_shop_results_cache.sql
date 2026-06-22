@@ -4,3 +4,7 @@
 -- Written only by the service-role admin client (server-side); no RLS policy
 -- needed beyond the existing owner-read on generations.
 alter table public.generations add column if not exists shop_results jsonb;
+
+-- Shopping a look costs 1 credit, charged once per design (re-opening or shopping
+-- more items on the same look is free). This marks a design as already paid for.
+alter table public.generations add column if not exists shop_paid boolean not null default false;

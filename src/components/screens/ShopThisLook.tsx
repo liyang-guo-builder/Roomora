@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useT } from "@/lib/i18n";
+import { useStore } from "@/lib/store";
+import { useFlow } from "@/components/flow/FlowProvider";
 import { Icon } from "@/components/ui";
 import { shopService, type ShopGroup, type ShopProduct } from "@/lib/services";
 import { CATEGORY_LABELS } from "@/lib/shop/categories";
@@ -98,6 +100,9 @@ function Group({ group }: { group: ShopGroup }) {
 
 export function ShopThisLook({ generationId }: { generationId: string }) {
   const { t } = useT();
+  const anon = useStore((s) => s.anon);
+  const setCredits = useStore((s) => s.setCredits);
+  const { openModal } = useFlow();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [showMinor, setShowMinor] = useState(false);
 
@@ -106,11 +111,18 @@ export function ShopThisLook({ generationId }: { generationId: string }) {
     queryFn: () => shopService.itemize(generationId),
     staleTime: 30 * 60 * 1000,
     retry: 1,
-    enabled: SHOP_LIVE,
+    enabled: SHOP_LIVE && !anon,
   });
 
   const search = useMutation({
     mutationFn: (keys: number[]) => shopService.search(generationId, keys),
+    onSuccess: (data) => {
+      if (typeof data.balance === "number") setCredits(data.balance);
+    },
+    onError: (err: Error) => {
+      if (err.message === "insufficient_credits") openModal("buy");
+      else if (err.message === "unauthorized") openModal("auth", { reason: "save" });
+    },
   });
 
   const items = useMemo(() => itemsQuery.data?.items ?? [], [itemsQuery.data]);
@@ -135,6 +147,26 @@ export function ShopThisLook({ generationId }: { generationId: string }) {
             "即将上线。很快你就可以购买与你的设计相搭配的真实家具。",
           )}
         </span>
+      </div>
+    );
+  }
+
+  if (anon) {
+    return (
+      <div className="mt-3 rounded-xl bg-sage-tint/50 px-3.5 py-3">
+        <p className="text-[12.5px] text-ink-2 mb-2.5">
+          {t(
+            "Sign up to shop your design — find real furniture that matches, within your budget.",
+            "注册即可购买你的设计同款，在预算内找到相搭配的真实家具。",
+          )}
+        </p>
+        <button
+          onClick={() => openModal("auth", { reason: "save" })}
+          className="h-10 px-4 rounded-xl bg-sage text-paper text-[13.5px] font-semibold flex items-center gap-1.5 active:scale-[.99]"
+        >
+          <Icon name="bag" size={15} />
+          {t("Sign up to shop", "注册后购买")}
+        </button>
       </div>
     );
   }
@@ -231,6 +263,13 @@ export function ShopThisLook({ generationId }: { generationId: string }) {
           </>
         )}
       </button>
+
+      <p className="mt-1.5 text-[11px] text-ink-3 text-center">
+        {t(
+          "Uses 1 credit, then free for this design.",
+          "消耗 1 积分，此设计之后免费。",
+        )}
+      </p>
 
       {search.isError && (
         <div className="mt-3 flex items-center gap-2 text-[12.5px] text-ink-2 bg-danger-tint/60 rounded-xl px-3 py-2.5">

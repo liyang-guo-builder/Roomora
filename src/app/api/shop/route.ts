@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { itemizeDesign, type DesignItem } from "@/lib/shop/itemizer";
 import { asShopCategory } from "@/lib/shop/categories";
@@ -75,6 +76,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "missing_generation_id" }, { status: 400 });
   }
 
+  // Registered users only: shopping is a signed-in feature.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const minimaxKey = process.env.MINIMAX_API_KEY;
   const searchKey = process.env.SEARCHAPI_KEY;
   const admin = createAdminClient();
@@ -82,7 +92,7 @@ export async function POST(request: NextRequest) {
   // ── Load the generation (admin bypasses RLS; allows anon rows). ──
   const { data: gen, error: genErr } = await admin
     .from("generations")
-    .select("id, result_url, budget, items, shop_results")
+    .select("id, result_url, budget, items, shop_results, shop_paid")
     .eq("id", generationId)
     .single();
   if (genErr || !gen) {
@@ -141,6 +151,23 @@ export async function POST(request: NextRequest) {
   const total = bandToTotal((gen.budget as BudgetId | null) ?? null);
   const cache = (gen.shop_results as Record<string, ShopProduct[]> | null) ?? {};
 
+  // Shopping a look costs 1 credit, charged ONCE per design. Re-opening or
+  // shopping more items on the same look is free. Spend up-front; refund below
+  // if the search turns up nothing.
+  let balance: number | null = null;
+  let charged = false;
+  if (gen.shop_paid !== true) {
+    const { data, error } = await supabase.rpc("spend_credits", {
+      p_amount: 1,
+      p_reason: "shop",
+    });
+    if (error) {
+      return NextResponse.json({ error: "insufficient_credits" }, { status: 402 });
+    }
+    balance = data as number;
+    charged = true;
+  }
+
   const groups = await Promise.all(
     validKeys.map(async (key): Promise<ShopGroup | null> => {
       const item = items[key];
@@ -195,16 +222,28 @@ export async function POST(request: NextRequest) {
 
   const result = groups.filter((g): g is ShopGroup => g !== null);
 
-  // Persist the (merged) cache best-effort — never fail the request on a write.
-  await admin
-    .from("generations")
-    .update({ shop_results: cache })
-    .eq("id", generationId)
-    .then(({ error }) => {
-      if (error) console.error("shop_results cache write failed:", error.message);
+  if (charged && result.length === 0) {
+    // Nothing found — refund the credit and leave the design unpaid so the user
+    // can try again later without being charged for an empty result.
+    const { data } = await admin.rpc("add_credits_for", {
+      p_user_id: user.id,
+      p_amount: 1,
+      p_reason: "shop_refund",
     });
+    if (typeof data === "number") balance = data;
+  } else {
+    // Persist the cache and, if this was the paid search, mark the design paid.
+    // Best-effort — never fail the request on a write.
+    await admin
+      .from("generations")
+      .update(charged ? { shop_results: cache, shop_paid: true } : { shop_results: cache })
+      .eq("id", generationId)
+      .then(({ error }) => {
+        if (error) console.error("shop_results cache write failed:", error.message);
+      });
+  }
 
-  return NextResponse.json({ generationId, groups: result });
+  return NextResponse.json({ generationId, groups: result, balance });
 }
 
 function pick(item: DesignItem): { category: string; label: string; query: string } {
