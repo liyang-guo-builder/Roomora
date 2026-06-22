@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { AppHeader, Icon } from "@/components/ui";
 import { InstallHint } from "@/components/ui/InstallHint";
 import { useT } from "@/lib/i18n";
+import { useStore } from "@/lib/store";
 import { useFlow } from "./FlowProvider";
 import { AuthModal } from "@/components/modals/AuthModal";
 import { BuyModal } from "@/components/modals/BuyModal";
@@ -47,7 +48,11 @@ function BottomNav() {
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { modal, authReason, forceOut, toast, openModal } = useFlow();
-  const showNav = NAV_ROUTES.includes(pathname);
+  const anon = useStore((s) => s.anon);
+  // Keep the landing page a focused conversion funnel for first-time (anon)
+  // visitors: no bottom nav competing with the single "add a photo" CTA.
+  // Signed-in users keep the nav on Home to reach Designs / Account.
+  const showNav = NAV_ROUTES.includes(pathname) && !(pathname === "/" && anon);
 
   // Public/standalone pages render full-width, outside the mobile app chrome
   // (no phone frame, header, bottom nav, or in-app modals): the share pages

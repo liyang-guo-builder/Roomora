@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { readImageFile } from "@/lib/readImageFile";
-import { Icon } from "@/components/ui";
+import { Icon, type IconName } from "@/components/ui";
 import { BeforeAfter } from "@/components/ui/BeforeAfter";
 import { useFlow } from "@/components/flow/FlowProvider";
 
@@ -62,42 +62,10 @@ export function LandingScreen() {
         )}
       </p>
 
-      {/* dropzone */}
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        onChange={onFile}
-        className="hidden"
-      />
-      <button
-        onClick={openPicker}
-        className="mt-6 w-full rounded-[22px] border-2 border-dashed border-sage/45 bg-sage-tint/50 hover:bg-sage-tint transition-colors p-7 flex flex-col items-center text-center active:scale-[.99]"
-      >
-        <div className="w-16 h-16 rounded-2xl bg-sage text-paper flex items-center justify-center shadow-[0_10px_24px_-8px_rgba(124,136,102,.9)] mb-4">
-          <Icon name="camera" size={28} />
-        </div>
-        <div className="text-[16px] font-semibold text-ink">
-          {t("Add a photo of your room", "上传你的房间照片")}
-        </div>
-        <div className="text-[13px] text-ink-2 mt-1">
-          {t("Take a photo or upload from your library", "拍摄或从相册中选择")}
-        </div>
-      </button>
-      <p className="text-center text-[11.5px] text-ink-3 mt-2.5">
-        {t("JPG or PNG · your photo is private", "JPG 或 PNG · 照片仅你可见")}
-      </p>
-      <p className="text-center text-[12px] text-ink-2 mt-3">
-        {t(
-          "1 free try, no signup · sign up for 3 more · then buy credits",
-          "1 次免费试用，无需注册 · 注册再送 3 次 · 之后购买点数",
-        )}
-      </p>
-
-      {/* interactive proof — same room, switch styles, drag to compare */}
-      <div className="mt-8 flex items-baseline justify-between">
+      {/* interactive proof FIRST — show the magic before asking for a photo */}
+      <div className="mt-7 flex items-baseline justify-between">
         <h2 className="text-[15px] font-semibold text-ink">
-          {t("Real rooms, restyled", "真实房间，焕新效果")}
+          {t("See it on a real room", "看看真实房间的效果")}
         </h2>
         <span className="text-[12.5px] text-ink-3">{t("Drag to compare", "拖动对比")}</span>
       </div>
@@ -120,10 +88,53 @@ export function LandingScreen() {
         <BeforeAfter
           beforeUrl="/examples/room-before.jpg"
           afterUrl={EXAMPLES[sel].after}
-          height={280}
+          height={260}
         />
       </div>
 
+      {/* dropzone — the single primary CTA */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        onChange={onFile}
+        className="hidden"
+      />
+      <button
+        onClick={openPicker}
+        className="mt-7 w-full rounded-[22px] border-2 border-dashed border-sage/45 bg-sage-tint/50 hover:bg-sage-tint transition-colors p-7 flex flex-col items-center text-center active:scale-[.99]"
+      >
+        <div className="w-16 h-16 rounded-2xl bg-sage text-paper flex items-center justify-center shadow-[0_10px_24px_-8px_rgba(124,136,102,.9)] mb-4">
+          <Icon name="camera" size={28} />
+        </div>
+        <div className="text-[16px] font-semibold text-ink">
+          {t("Add a photo of your room", "上传你的房间照片")}
+        </div>
+        <div className="text-[13px] text-ink-2 mt-1">
+          {t("Take a photo or upload from your library", "拍摄或从相册中选择")}
+        </div>
+      </button>
+      <p className="text-center text-[11.5px] text-ink-3 mt-2.5">
+        {t("JPG or PNG · your photo is private", "JPG 或 PNG · 照片仅你可见")}
+      </p>
+
+      {/* trust row */}
+      <div className="mt-6 flex gap-2">
+        {(
+          [
+            ["grid", t("Your layout stays put", "格局保持不变")],
+            ["eye", t("Preview before saving", "保存前先预览")],
+            ["sparkle", t("Free to try, no signup", "免费试用，无需注册")],
+          ] as [IconName, string][]
+        ).map(([ic, lab]) => (
+          <div key={lab} className="flex-1 text-center">
+            <div className="w-9 h-9 rounded-[11px] bg-surface border border-line flex items-center justify-center text-sage mx-auto mb-1.5">
+              <Icon name={ic} size={18} />
+            </div>
+            <div className="text-[11.5px] font-medium text-ink-2 leading-tight">{lab}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

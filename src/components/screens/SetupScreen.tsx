@@ -6,8 +6,14 @@ import { useStore } from "@/lib/store";
 import { useFlow } from "@/components/flow/FlowProvider";
 import { readImageFile } from "@/lib/readImageFile";
 import { Btn, Chip, Icon, RoomPhoto, StyleTile, FieldLabel, type IconName } from "@/components/ui";
-import { STYLES } from "@/lib/constants";
-import type { BudgetId, SetupTab } from "@/lib/types";
+import { STYLES, STYLE_NAMES } from "@/lib/constants";
+import type { BudgetId, SetupTab, StyleId } from "@/lib/types";
+
+// The few styles surfaced first for this market — French (法式) leads since the
+// audience is furnishing Paris apartments, plus two perennial favourites.
+const FEATURED_IDS: StyleId[] = ["french", "japandi", "scandi"];
+const FEATURED = FEATURED_IDS.map((id) => STYLES.find((s) => s.id === id)!).filter(Boolean);
+const REST = STYLES.filter((s) => !FEATURED_IDS.includes(s.id));
 
 export function SetupScreen() {
   const { t } = useT();
@@ -50,8 +56,11 @@ export function SetupScreen() {
     (tab === "browse" && !!setup.style) ||
     (tab === "match" && !!inspirationPhoto);
 
+  const selectedName =
+    tab === "browse" && setup.style ? STYLE_NAMES[setup.style] : null;
+
   return (
-    <div className="px-5 pb-32 pt-3">
+    <div className="px-5 pb-40 pt-3">
       {/* your room */}
       <input
         ref={fileRef}
@@ -109,16 +118,40 @@ export function SetupScreen() {
       </div>
 
       {tab === "browse" ? (
-        <div className="mt-4 grid grid-cols-2 gap-2.5">
-          {STYLES.map((s) => (
-            <StyleTile
-              key={s.id}
-              {...s}
-              active={setup.style === s.id}
-              onClick={() => setSetup({ ...setup, style: s.id })}
-            />
-          ))}
-        </div>
+        <>
+          {/* Popular in Paris — featured, horizontally scrollable */}
+          <div className="mt-5">
+            <div className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-brass mb-2.5">
+              <Icon name="sparkle" size={14} /> {t("Popular in Paris", "巴黎热门")}
+            </div>
+            <div className="flex gap-2.5 overflow-x-auto -mx-1 px-1 pb-1">
+              {FEATURED.map((s) => (
+                <div key={s.id} className="w-[132px] shrink-0">
+                  <StyleTile
+                    {...s}
+                    active={setup.style === s.id}
+                    onClick={() => setSetup({ ...setup, style: s.id })}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* All styles */}
+          <div className="mt-5 text-[13px] font-semibold text-ink">
+            {t("All styles", "全部风格")}
+          </div>
+          <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+            {REST.map((s) => (
+              <StyleTile
+                key={s.id}
+                {...s}
+                active={setup.style === s.id}
+                onClick={() => setSetup({ ...setup, style: s.id })}
+              />
+            ))}
+          </div>
+        </>
       ) : (
         <div className="mt-4">
           <input
@@ -203,8 +236,16 @@ export function SetupScreen() {
         </div>
       </div>
 
-      {/* sticky CTA */}
-      <div className="fixed inset-x-0 bottom-0 px-5 pt-3 pb-5 bg-gradient-to-t from-paper via-paper to-transparent mx-auto w-full max-w-[480px]">
+      {/* sticky CTA dock — solid backing so tiles don't bleed under it */}
+      <div className="fixed inset-x-0 bottom-0 px-5 pt-8 pb-5 bg-gradient-to-t from-paper from-70% to-transparent mx-auto w-full max-w-[480px]">
+        {selectedName && (
+          <div className="text-center mb-2.5">
+            <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-sage-deep bg-sage-tint px-2.5 py-1 rounded-full">
+              <Icon name="check" size={13} />
+              {t(`${selectedName[0]} selected`, `已选 ${selectedName[1]}`)}
+            </span>
+          </div>
+        )}
         <Btn
           variant="primary"
           size="lg"
@@ -217,7 +258,7 @@ export function SetupScreen() {
         </Btn>
         <p className="text-center text-[11.5px] text-ink-3 mt-2">
           {canContinue
-            ? t("Takes about 30 seconds", "大约需要 30 秒")
+            ? t("Takes about 30 seconds · your room stays your room", "大约需要 30 秒 · 房间结构不变")
             : tab === "match"
               ? t("Upload an inspiration photo to continue", "上传一张灵感图以继续")
               : t("Pick a style to continue", "选择一种风格以继续")}
