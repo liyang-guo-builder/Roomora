@@ -65,6 +65,15 @@ function toCard(r: ProductRow): ProductCard {
  * the generationId to resolve to an existing row (catalog data is public).
  */
 export async function POST(request: NextRequest) {
+  // Server-side gate: the route triggers paid vision calls, so it must not be
+  // reachable while the feature is parked. NEXT_PUBLIC_SHOP_LIVE is read here on
+  // the server (not just used to hide the UI). When the live-search version is
+  // built, this gains per-user rate limiting (device cookie + IP, like
+  // /api/generate) before the flag is flipped on.
+  if (process.env.NEXT_PUBLIC_SHOP_LIVE !== "true") {
+    return NextResponse.json({ error: "shop_disabled" }, { status: 503 });
+  }
+
   let body: ShopBody;
   try {
     body = (await request.json()) as ShopBody;

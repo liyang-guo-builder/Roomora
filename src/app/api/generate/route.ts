@@ -254,13 +254,17 @@ export async function POST(request: NextRequest) {
   }
 
   // Helper to refund the spent credit on any downstream failure.
+  // Uses the service-role add_credits_for() via the admin client. The
+  // self-serve add_credits() is revoked from clients (anti-exploit), so refunds
+  // must credit the user explicitly server-side.
   async function refundOnFailure() {
     if (!user || !creditSpent) return;
-    await supabase
-      .rpc("add_credits", { p_amount: 1, p_reason: "refund" })
-      .then(({ data }) => {
-        if (typeof data === "number") balance = data;
-      });
+    const { data } = await admin.rpc("add_credits_for", {
+      p_user_id: user.id,
+      p_amount: 1,
+      p_reason: "refund",
+    });
+    if (typeof data === "number") balance = data;
   }
 
   try {

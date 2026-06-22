@@ -5,6 +5,19 @@
 
 import "server-only";
 import { asShopCategory, SHOP_CATEGORIES, type ShopCategory } from "./categories";
+import { extractJsonArray } from "./parseItems";
+
+/** MiniMax vision rejects remote image URLs (notably Supabase public URLs:
+ *  status 2013 "disallowed url"). Fetch the image and inline it as a base64
+ *  data URI, which it accepts. A value already a data URI passes through. */
+async function toDataUri(imageUrl: string): Promise<string> {
+  if (imageUrl.startsWith("data:")) return imageUrl;
+  const res = await fetch(imageUrl);
+  if (!res.ok) throw new Error(`image_fetch_failed ${res.status}`);
+  const contentType = res.headers.get("content-type") || "image/png";
+  const b64 = Buffer.from(await res.arrayBuffer()).toString("base64");
+  return `data:${contentType};base64,${b64}`;
+}
 
 export interface DesignItem {
   category: ShopCategory;
@@ -25,29 +38,11 @@ Each element must be an object with exactly these keys:
 Only include items that map to one of the listed categories. Do not include walls, floors, windows, doors or ceilings.
 Example: [{"category":"sofa","query":"sage linen 3-seater sofa","color":"sage green","material":"linen"}]`;
 
-/** Strip code fences and pull the first JSON array out of an LLM response. */
-function extractJsonArray(raw: string): unknown[] {
-  let s = raw.trim();
-  // Remove ```json ... ``` or ``` ... ``` fences.
-  s = s.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
-  // Tolerate prose around the array: grab from the first '[' to the last ']'.
-  const start = s.indexOf("[");
-  const end = s.lastIndexOf("]");
-  if (start !== -1 && end !== -1 && end > start) {
-    s = s.slice(start, end + 1);
-  }
-  try {
-    const parsed = JSON.parse(s);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
 /**
  * Itemize a generated design image into 5-8 shoppable items.
- * `imageUrl` must be a publicly reachable URL (e.g. a Supabase public URL).
- * Throws on transport/API failure so callers can surface an error.
+ * `imageUrl` may be a public URL or a data URI; it is always inlined as base64
+ * before sending (MiniMax rejects remote URLs). Throws on transport/API failure
+ * so callers can surface an error.
  */
 export async function itemizeDesign(
   imageUrl: string,
@@ -56,6 +51,7 @@ export async function itemizeDesign(
   const base =
     process.env.MINIMAX_BASE_URL?.replace(/\/+$/, "") ||
     "https://api.minimaxi.com";
+  const dataUri = await toDataUri(imageUrl);
   const res = await fetch(`${base}/v1/text/chatcompletion_v2`, {
     method: "POST",
     headers: {
@@ -69,7 +65,7 @@ export async function itemizeDesign(
           role: "user",
           content: [
             { type: "text", text: ITEMIZE_PROMPT },
-            { type: "image_url", image_url: { url: imageUrl } },
+            { type: "image_url", image_url: { url: dataUri } },
           ],
         },
       ],
