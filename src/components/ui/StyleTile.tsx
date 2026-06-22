@@ -23,7 +23,7 @@ export function StyleTile({
   return (
     <button
       onClick={onClick}
-      className={`group relative aspect-[4/5] rounded-[16px] overflow-hidden text-left transition-all active:scale-[.98] ${
+      className={`group relative w-full aspect-[4/5] rounded-[16px] overflow-hidden text-left transition-all active:scale-[.98] ${
         active ? "ring-2 ring-sage ring-offset-2 ring-offset-paper" : "ring-1 ring-line"
       }`}
       style={{ background: STYLE_TONES[id] }}
