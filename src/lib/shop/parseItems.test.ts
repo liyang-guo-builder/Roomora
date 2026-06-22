@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractJsonArray } from "./parseItems";
+import { extractJsonArray, parseJudgeScores } from "./parseItems";
 
 describe("extractJsonArray", () => {
   it("parses a plain JSON array", () => {
@@ -22,5 +22,34 @@ describe("extractJsonArray", () => {
 
   it("returns [] when the payload is a JSON object, not an array", () => {
     expect(extractJsonArray('{"a":1}')).toEqual([]);
+  });
+});
+
+describe("parseJudgeScores", () => {
+  it("parses the documented array form [{i,score}]", () => {
+    expect(parseJudgeScores('[{"i":1,"score":85},{"i":2,"score":70}]')).toEqual([
+      { i: 1, score: 85 },
+      { i: 2, score: 70 },
+    ]);
+  });
+
+  it("parses the object-of-objects form the model actually returns", () => {
+    const raw = '{\n"1":{"i":1,"score":85},\n"2":{"score":90}\n}';
+    expect(parseJudgeScores(raw)).toEqual([
+      { i: 1, score: 85 },
+      { i: 2, score: 90 },
+    ]);
+  });
+
+  it("parses the object-of-numbers form ({\"1\":85})", () => {
+    expect(parseJudgeScores('{"1":85,"2":60}')).toEqual([
+      { i: 1, score: 85 },
+      { i: 2, score: 60 },
+    ]);
+  });
+
+  it("strips code fences and returns [] for junk", () => {
+    expect(parseJudgeScores('```json\n[{"i":1,"score":50}]\n```')).toEqual([{ i: 1, score: 50 }]);
+    expect(parseJudgeScores("no scores here")).toEqual([]);
   });
 });

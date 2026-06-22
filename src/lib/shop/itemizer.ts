@@ -19,24 +19,37 @@ async function toDataUri(imageUrl: string): Promise<string> {
   return `data:${contentType};base64,${b64}`;
 }
 
+export type ItemTier = "hero" | "minor";
+
 export interface DesignItem {
   category: ShopCategory;
-  /** Short search phrase, e.g. "round walnut coffee table". */
+  /** "hero" = a defining furniture piece (shown + checkable by default);
+   *  "minor" = small decor (plant, cushion, art), tucked away by default. */
+  tier: ItemTier;
+  /** Short human label, e.g. "Grey 2-seater sofa". */
+  label: string;
+  /** Precise FRENCH shopping search phrase, e.g. "canapé 2 places gris pieds bois". */
   query: string;
+  /** Visual description for the match judge, e.g. "small low-back 2-seater,
+   *  light grey fabric, exposed wood legs". */
+  target: string;
   color: string;
   material: string;
 }
 
-const ITEMIZE_PROMPT = `You are a furniture-spotting assistant for a "shop this look" feature.
-Look at this interior room image and list the distinct, buyable furniture and decor items you can see.
-Return ONLY a JSON array (no prose, no markdown fences). 5 to 8 items maximum, the most prominent ones.
+const ITEMIZE_PROMPT = `You are a furniture-spotting assistant for a "shop this look" feature in an interior-design app whose users furnish apartments in France.
+Look at this room render and list the items a user could realistically want to BUY to recreate the look.
+Return ONLY a JSON array (no prose, no markdown fences), ranked most prominent first. 5 to 8 items maximum.
 Each element must be an object with exactly these keys:
   "category": one of ${JSON.stringify([...SHOP_CATEGORIES])}
-  "query": a short shopping search phrase (2-5 words), e.g. "round walnut coffee table"
-  "color": the dominant colour, e.g. "sage green" (empty string if unclear)
+  "tier": "hero" for the big defining furniture pieces (seating, tables, rug, lighting, storage) OR "minor" for small/cheap decor (plant, cushion, vase, books, small objects, wall art)
+  "label": a short human name in English, e.g. "Grey 2-seater sofa"
+  "query": a PRECISE French shopping search phrase including size and material cues, e.g. "canapé 2 places tissu gris pieds bois"
+  "target": a short visual description for matching, e.g. "small low-back 2-seater, light grey fabric, exposed wood legs"
+  "color": the dominant colour, e.g. "light grey" (empty string if unclear)
   "material": the main material, e.g. "oak" or "linen" (empty string if unclear)
-Only include items that map to one of the listed categories. Do not include walls, floors, windows, doors or ceilings.
-Example: [{"category":"sofa","query":"sage linen 3-seater sofa","color":"sage green","material":"linen"}]`;
+Only include items that map to one of the listed categories. Do NOT include walls, floors, windows, doors, ceilings, curtains or the room itself. Group similar small things (e.g. all cushions = one entry).
+Example: [{"category":"sofa","tier":"hero","label":"Grey 2-seater sofa","query":"canapé 2 places tissu gris pieds bois","target":"small low-back 2-seater, light grey fabric, exposed wood legs","color":"light grey","material":"linen"}]`;
 
 /**
  * Itemize a generated design image into 5-8 shoppable items.
@@ -96,11 +109,15 @@ export async function itemizeDesign(
     const o = el as Record<string, unknown>;
     const query = typeof o.query === "string" ? o.query.trim() : "";
     if (!query) continue;
+    const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
     items.push({
       category: asShopCategory(o.category),
+      tier: o.tier === "minor" ? "minor" : "hero",
+      label: str(o.label) || query,
       query,
-      color: typeof o.color === "string" ? o.color.trim() : "",
-      material: typeof o.material === "string" ? o.material.trim() : "",
+      target: str(o.target),
+      color: str(o.color),
+      material: str(o.material),
     });
     if (items.length >= 8) break;
   }

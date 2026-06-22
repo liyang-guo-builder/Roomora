@@ -21,7 +21,7 @@ export { designsService } from "./designs";
 
 // Real "Shop this look" (Phase 5).
 export { shopService } from "./shop";
-export type { ShopProduct, ShopGroup, ShopResult } from "./shop";
+export type { ShopItem, ShopProduct, ShopGroup, ShopResult, ItemizeResult } from "./shop";
 
 // Mock payment service kept as the dev/local fallback when Stripe is unset.
 export { paymentService as mockPaymentService } from "./mock";
