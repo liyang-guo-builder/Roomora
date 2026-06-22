@@ -14,6 +14,8 @@ export function BeforeAfter({
   className = "",
   beforeUrl,
   afterUrl,
+  reveal = true,
+  hint = true,
 }: {
   height?: number;
   label?: string;
@@ -21,10 +23,16 @@ export function BeforeAfter({
   className?: string;
   beforeUrl?: string | null;
   afterUrl?: string | null;
+  /** Animate the split open on mount (the "reveal" moment). */
+  reveal?: boolean;
+  /** Show the pulsing handle + "drag to reveal" hint until first interaction. */
+  hint?: boolean;
 }) {
   const { t } = useT();
-  const [pos, setPos] = useState(54);
+  // Start mostly covered by the "before" so the redesign wipes into view.
+  const [pos, setPos] = useState(reveal ? 90 : 54);
   const [baseW, setBaseW] = useState(0);
+  const [interacted, setInteracted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
@@ -40,6 +48,14 @@ export function BeforeAfter({
     return () => ro.disconnect();
   }, []);
 
+  // Reveal on mount: ease the split from "before" to ~halfway. The CSS
+  // transition (active only while the user hasn't grabbed it) does the motion.
+  useEffect(() => {
+    if (!reveal) return;
+    const id = requestAnimationFrame(() => setPos(52));
+    return () => cancelAnimationFrame(id);
+  }, [reveal]);
+
   const apply = (clientX: number) => {
     const el = ref.current;
     if (!el) return;
@@ -49,6 +65,7 @@ export function BeforeAfter({
   };
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     dragging.current = true;
+    setInteracted(true);
     apply(e.clientX);
     try {
       (e.target as Element).setPointerCapture(e.pointerId);
@@ -56,6 +73,9 @@ export function BeforeAfter({
       /* noop */
     }
   };
+  // Transition the split open during the intro only; dragging must be instant.
+  const splitTransition = interacted ? undefined : "width .9s cubic-bezier(.4,0,.2,1)";
+  const showHint = hint && !interacted;
   const onMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (dragging.current) apply(e.clientX);
   };
@@ -87,7 +107,10 @@ export function BeforeAfter({
         />
       )}
       {/* BEFORE (clipped from left to pos) */}
-      <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
+      <div
+        className="absolute inset-0 overflow-hidden"
+        style={{ width: `${pos}%`, transition: splitTransition }}
+      >
         <div style={{ width: baseW || "100vw", height: "100%" }}>
           {beforeUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -117,12 +140,26 @@ export function BeforeAfter({
         </span>
       )}
 
+      {/* drag hint (until first interaction) */}
+      {showHint && (
+        <span className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 text-[11.5px] font-medium text-white bg-black/35 px-3 py-1.5 rounded-full backdrop-blur-sm whitespace-nowrap">
+          <span className="hint-swipe inline-flex">
+            <Icon name="arrowLeft" size={12} stroke={2.4} className="-mr-1" />
+            <Icon name="arrowRight" size={12} stroke={2.4} />
+          </span>
+          {t("Drag to reveal your room", "拖动查看你的房间")}
+        </span>
+      )}
+
       {/* divider + handle */}
       <div
         className="absolute top-0 bottom-0 z-20"
-        style={{ left: `${pos}%`, transform: "translateX(-50%)" }}
+        style={{ left: `${pos}%`, transform: "translateX(-50%)", transition: splitTransition && `left .9s cubic-bezier(.4,0,.2,1)` }}
       >
         <div className="w-[3px] h-full bg-white/90 shadow-[0_0_10px_rgba(0,0,0,.3)]" />
+        {showHint && (
+          <div className="absolute top-1/2 left-1/2 w-11 h-11 rounded-full border-2 border-white reveal-ring pointer-events-none" />
+        )}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white shadow-[0_4px_14px_rgba(0,0,0,.3)] flex items-center justify-center">
           <Icon name="arrowLeft" size={14} stroke={2.4} className="text-ink -mr-0.5" />
           <Icon name="arrowRight" size={14} stroke={2.4} className="text-ink -ml-0.5" />

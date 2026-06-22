@@ -50,14 +50,15 @@ export function LandingScreen() {
       </div>
 
       <h1 className="text-[30px] leading-[1.12] font-semibold tracking-[-.02em] text-ink text-balance">
-        {t("Redesign your real room.", "重新设计你真实的房间，")}
-        <br />
-        <span className="text-sage">{t("It stays your room.", "它依然是你的房间。")}</span>
+        {t("Fall for the room you already have,", "爱上你已经拥有的家，")}{" "}
+        <span className="text-sage">
+          {t("restyled into the look you love.", "焕新成你心动的样子。")}
+        </span>
       </h1>
       <p className="mt-3 text-[15px] leading-relaxed text-ink-2 max-w-[34ch]">
         {t(
-          "Same walls, windows and light, restyled into the look you love. You control what changes.",
-          "相同的墙面、窗户与光线，焕新成你向往的风格。一切由你掌控。",
+          "Same walls, windows and light, you control what changes.",
+          "相同的墙面、窗户与光线，一切由你掌控。",
         )}
       </p>
 
