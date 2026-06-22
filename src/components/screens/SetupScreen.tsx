@@ -124,7 +124,7 @@ export function SetupScreen() {
             <div className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-brass mb-2.5">
               <Icon name="sparkle" size={14} /> {t("Popular in Paris", "巴黎热门")}
             </div>
-            <div className="flex gap-2.5 overflow-x-auto -mx-1 px-1 pb-1">
+            <div className="flex gap-2.5 overflow-x-auto -mx-1.5 px-1.5 pt-2 pb-2">
               {FEATURED.map((s) => (
                 <div key={s.id} className="w-[132px] shrink-0">
                   <StyleTile
