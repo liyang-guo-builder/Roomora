@@ -158,3 +158,22 @@ main,
 .hint-swipe {
   animation: hintSwipe 2.6s ease-in-out infinite;
 }
+
+/* Landing hero: slow cinematic Ken-Burns zoom on the full-bleed room render. */
+@keyframes kenburns {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1.16);
+  }
+}
+.kenburns {
+  animation: kenburns 22s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kenburns {
+    animation: none;
+  }
+}

@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Public/standalone pages render full-width, outside the mobile app chrome
   // (no phone frame, header, bottom nav, or in-app modals): the share pages
   // and the legal pages (long-form, readable).
-  const bare = ["/share", "/terms", "/privacy"];
+  const bare = ["/share", "/terms", "/privacy", "/landing-preview"];
   if (pathname && bare.some((r) => pathname.startsWith(r))) {
     return <>{children}</>;
   }
