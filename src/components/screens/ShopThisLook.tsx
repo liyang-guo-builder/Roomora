@@ -105,8 +105,9 @@ export function ShopThisLook({ generationId }: { generationId: string }) {
   const setCredits = useStore((s) => s.setCredits);
   const { openModal } = useFlow();
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [showMinor, setShowMinor] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [country, setCountry] = useState(DEFAULT_COUNTRY);
+  const TOP_N = 3;
 
   const itemsQuery = useQuery({
     queryKey: ["shop-items", generationId],
@@ -128,8 +129,9 @@ export function ShopThisLook({ generationId }: { generationId: string }) {
   });
 
   const items = useMemo(() => itemsQuery.data?.items ?? [], [itemsQuery.data]);
-  const hero = items.filter((i) => i.tier === "hero");
-  const minor = items.filter((i) => i.tier === "minor");
+  // Show the few most-prominent pieces; tuck the rest behind "show more".
+  const visible = items.slice(0, TOP_N);
+  const rest = items.slice(TOP_N);
 
   const toggle = (key: number) =>
     setSelected((prev) => {
@@ -175,10 +177,23 @@ export function ShopThisLook({ generationId }: { generationId: string }) {
 
   if (itemsQuery.isLoading) {
     return (
-      <div className="mt-3 space-y-2" aria-busy="true">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-11 rounded-xl bg-surface-sunk animate-pulse" />
-        ))}
+      <div
+        className="mt-3 rounded-xl bg-sage-tint/40 px-4 py-6 flex flex-col items-center text-center"
+        aria-busy="true"
+      >
+        <div className="relative w-10 h-10 mb-3">
+          <span className="absolute inset-0 rounded-full border-2 border-sage/25" />
+          <span className="absolute inset-0 rounded-full border-2 border-sage border-t-transparent animate-spin" />
+          <span className="absolute inset-0 flex items-center justify-center text-sage">
+            <Icon name="bag" size={16} />
+          </span>
+        </div>
+        <div className="text-[13px] font-medium text-ink">
+          {t("Finding the pieces in your design…", "正在识别你设计中的单品…")}
+        </div>
+        <div className="text-[11.5px] text-ink-3 mt-0.5">
+          {t("Spotting the sofa, table, rug and more.", "正在定位沙发、桌子、地毯等。")}
+        </div>
       </div>
     );
   }
@@ -237,23 +252,25 @@ export function ShopThisLook({ generationId }: { generationId: string }) {
       </div>
 
       <div className="space-y-2">
-        {hero.map((it) => (
+        {visible.map((it) => (
           <Row key={it.key} k={it.key} label={it.label} />
         ))}
       </div>
 
-      {minor.length > 0 && (
+      {rest.length > 0 && (
         <div className="mt-2">
           <button
-            onClick={() => setShowMinor((v) => !v)}
+            onClick={() => setShowMore((v) => !v)}
             className="flex items-center gap-1 text-[12px] font-medium text-ink-2 hover:text-sage transition-colors py-1.5"
           >
-            <Icon name="chevronDown" size={14} className={showMinor ? "rotate-180" : ""} />
-            {t("Smaller decor", "更多小件饰品")} ({minor.length})
+            <Icon name="chevronDown" size={14} className={showMore ? "rotate-180" : ""} />
+            {showMore
+              ? t("Show fewer", "收起")
+              : t(`Show ${rest.length} more items`, `显示其余 ${rest.length} 件`)}
           </button>
-          {showMinor && (
+          {showMore && (
             <div className="space-y-2 mt-1">
-              {minor.map((it) => (
+              {rest.map((it) => (
                 <Row key={it.key} k={it.key} label={it.label} />
               ))}
             </div>
@@ -309,8 +326,8 @@ export function ShopThisLook({ generationId }: { generationId: string }) {
               ))}
               <div className="text-[11px] text-ink-3 px-0.5">
                 {t(
-                  "Similar items from French retailers · prices and stock on the store page.",
-                  "来自法国零售商的相似商品 · 价格与库存以商家页面为准。",
+                  "Similar items from local retailers · prices and stock on the store page.",
+                  "来自当地零售商的相似商品 · 价格与库存以商家页面为准。",
                 )}
               </div>
             </>

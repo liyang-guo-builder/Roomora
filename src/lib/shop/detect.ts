@@ -83,7 +83,20 @@ export async function detectItems(
       box: { x: b.x, y: b.y, w: b.w, h: b.h },
     });
   }
-  // Hero items first; cap the list so the checklist stays short.
-  items.sort((a, b) => (a.tier === b.tier ? 0 : a.tier === "hero" ? -1 : 1));
-  return items.slice(0, 8);
+  // Dedupe by category, keeping the largest (most prominent) box — so two
+  // detected armchairs collapse into one "Armchair" row.
+  const byCat = new Map<ShopCategory, DetectedItem>();
+  for (const it of items) {
+    const prev = byCat.get(it.category);
+    if (!prev || it.box.w * it.box.h > prev.box.w * prev.box.h) {
+      byCat.set(it.category, it);
+    }
+  }
+  // Hero pieces first, then biggest first — so the most prominent items lead the
+  // list (the UI shows the top few and tucks the rest behind "show more").
+  const deduped = [...byCat.values()].sort((a, b) => {
+    if (a.tier !== b.tier) return a.tier === "hero" ? -1 : 1;
+    return b.box.w * b.box.h - a.box.w * a.box.h;
+  });
+  return deduped.slice(0, 8);
 }
