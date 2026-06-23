@@ -57,9 +57,15 @@ export function parseJudgeScores(raw: string): { i: number; score: number }[] {
           if (Number.isFinite(i)) out.push({ i, score: v });
         }
       }
+      if (out.length) return out;
     } catch {
-      /* give up — caller defaults to 0 */
+      /* fall through to prose form */
     }
+  }
+  // Prose fallback: the model sometimes writes "Candidate 1: 85" / "1. ... 85%".
+  for (const m of s.matchAll(/(?:candidate\s*)?(\d{1,2})[^\d]{0,40}?(\d{1,3})\s*(?:\/\s*100|%|points|pts)?/gi)) {
+    const i = Number(m[1]), score = Number(m[2]);
+    if (i >= 1 && i <= 30 && score >= 0 && score <= 100) out.push({ i, score });
   }
   return out;
 }

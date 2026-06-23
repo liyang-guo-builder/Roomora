@@ -1,28 +1,29 @@
 import { NextResponse, type NextRequest } from "next/server";
+import sharp from "sharp";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { itemizeDesign, type DesignItem } from "@/lib/shop/itemizer";
-import { asShopCategory } from "@/lib/shop/categories";
-import { searchProductsFR } from "@/lib/shop/search";
+import { detectItems, type DetectedItem } from "@/lib/shop/detect";
+import { describeCrop } from "@/lib/shop/describe";
+import { searchProducts } from "@/lib/shop/search";
 import { judgeMatches } from "@/lib/shop/judge";
 import { bandToTotal, itemCap } from "@/lib/shop/budget";
+import { getCountry } from "@/lib/shop/countries";
+import { asShopCategory } from "@/lib/shop/categories";
 import type { BudgetId } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-/** Score at or above which a candidate counts as a genuine look-alike. */
 const LOOKALIKE_MIN = 80;
-/** Looser floor used only as a fallback when nothing clears LOOKALIKE_MIN. */
 const FALLBACK_MIN = 62;
-/** Cards shown per item. */
 const PER_ITEM = 3;
+const CROP_PAD = 24;
 
 interface ShopBody {
   generationId?: string;
   action?: "itemize" | "search";
-  /** For action:"search" — indices into the cached items array. */
   keys?: number[];
+  country?: string;
 }
 
 interface ShopProduct {
@@ -32,34 +33,28 @@ interface ShopProduct {
   imageUrl: string | null;
   deeplink: string | null;
   brand: string | null;
-  /** True when priced above this item's budget slice (shown but flagged). */
   overBudget: boolean;
 }
-
 interface ShopGroup {
   key: number;
-  item: { category: string; label: string; query: string };
+  item: { category: string; label: string };
   products: ShopProduct[];
 }
 
-/** Coerce a cached/parsed object into a DesignItem (tolerates legacy shapes). */
-function asItem(o: Partial<DesignItem> & Record<string, unknown>): DesignItem {
-  const str = (v: unknown) => (typeof v === "string" ? v : "");
-  const query = str(o.query);
+/** Coerce a cached/parsed object into a DetectedItem (tolerates older rows). */
+function asDetected(o: Record<string, unknown>): DetectedItem {
+  const box = (o.box ?? {}) as Record<string, unknown>;
+  const num = (v: unknown) => (typeof v === "number" ? v : 0);
+  const category = asShopCategory(o.category);
   return {
-    category: asShopCategory(o.category),
+    category,
     tier: o.tier === "minor" ? "minor" : "hero",
-    label: str(o.label) || query,
-    query,
-    target: str(o.target),
-    color: str(o.color),
-    material: str(o.material),
+    label: typeof o.label === "string" && o.label ? o.label : category,
+    box: { x: num(box.x), y: num(box.y), w: num(box.w), h: num(box.h) },
   };
 }
 
 export async function POST(request: NextRequest) {
-  // Server-side gate (also used to hide the UI). Until this is "true" the route
-  // is closed so the paid vision/search calls can't be triggered.
   if (process.env.NEXT_PUBLIC_SHOP_LIVE !== "true") {
     return NextResponse.json({ error: "shop_disabled" }, { status: 503 });
   }
@@ -76,7 +71,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "missing_generation_id" }, { status: 400 });
   }
 
-  // Registered users only: shopping is a signed-in feature.
+  // Registered users only.
   const supabase = await createClient();
   const {
     data: { user },
@@ -85,11 +80,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  const falKey = process.env.FAL_KEY;
   const minimaxKey = process.env.MINIMAX_API_KEY;
   const searchKey = process.env.SEARCHAPI_KEY;
   const admin = createAdminClient();
 
-  // ── Load the generation (admin bypasses RLS; allows anon rows). ──
   const { data: gen, error: genErr } = await admin
     .from("generations")
     .select("id, result_url, budget, items, shop_results, shop_paid")
@@ -103,25 +98,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "no_result_image" }, { status: 400 });
   }
 
-  // ── Itemize once (cheap MiniMax vision call), cache onto the row. ──
-  let items: DesignItem[];
+  // ── Detect items once (Florence-2), cache on the row. ──
+  let items: DetectedItem[];
   const cached = gen.items as unknown[] | null;
   if (Array.isArray(cached) && cached.length > 0) {
-    items = cached.map((it) => asItem(it as Record<string, unknown>));
+    items = cached.map((it) => asDetected(it as Record<string, unknown>));
   } else {
-    if (!minimaxKey) {
-      return NextResponse.json({ error: "itemizer_not_configured" }, { status: 500 });
+    if (!falKey) {
+      return NextResponse.json({ error: "detector_not_configured" }, { status: 500 });
     }
     try {
-      items = await itemizeDesign(resultUrl, minimaxKey);
+      items = await detectItems(resultUrl, falKey);
     } catch (err) {
-      const detail = err instanceof Error ? err.message : "itemize_failed";
-      return NextResponse.json({ error: "itemize_failed", detail }, { status: 502 });
+      const detail = err instanceof Error ? err.message : "detect_failed";
+      return NextResponse.json({ error: "detect_failed", detail }, { status: 502 });
     }
     await admin.from("generations").update({ items }).eq("id", generationId).then(() => {});
   }
 
-  // ── action: itemize → return the checklist (no paid search). ──
+  // ── action: itemize → checklist only (no paid search). ──
   if (action === "itemize") {
     return NextResponse.json({
       generationId,
@@ -134,13 +129,11 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // ── action: search → for each selected item, live search + judge + budget. ──
-  if (!searchKey) {
+  // ── action: search ──
+  if (!searchKey || !minimaxKey) {
     return NextResponse.json({ error: "search_not_configured" }, { status: 500 });
   }
-  if (!minimaxKey) {
-    return NextResponse.json({ error: "judge_not_configured" }, { status: 500 });
-  }
+  const country = getCountry(body.country);
   const validKeys = (body.keys ?? []).filter(
     (k) => Number.isInteger(k) && k >= 0 && k < items.length,
   );
@@ -148,19 +141,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "no_items_selected" }, { status: 400 });
   }
 
+  // Fetch the design image once for cropping.
+  let design: Buffer;
+  let dim: { width: number; height: number };
+  try {
+    const r = await fetch(resultUrl);
+    if (!r.ok) throw new Error(`design_fetch ${r.status}`);
+    design = Buffer.from(await r.arrayBuffer());
+    const meta = await sharp(design).metadata();
+    dim = { width: meta.width ?? 0, height: meta.height ?? 0 };
+  } catch {
+    return NextResponse.json({ error: "design_unavailable" }, { status: 502 });
+  }
+
   const total = bandToTotal((gen.budget as BudgetId | null) ?? null);
   const cache = (gen.shop_results as Record<string, ShopProduct[]> | null) ?? {};
+  const cacheKey = (key: number) => `${country.code}:${key}`;
 
-  // Shopping a look costs 1 credit, charged ONCE per design. Re-opening or
-  // shopping more items on the same look is free. Spend up-front; refund below
-  // if the search turns up nothing.
+  // Charge 1 credit once per design (re-shopping / more items / other countries
+  // on the same design are free).
   let balance: number | null = null;
   let charged = false;
   if (gen.shop_paid !== true) {
-    const { data, error } = await supabase.rpc("spend_credits", {
-      p_amount: 1,
-      p_reason: "shop",
-    });
+    const { data, error } = await supabase.rpc("spend_credits", { p_amount: 1, p_reason: "shop" });
     if (error) {
       return NextResponse.json({ error: "insufficient_credits" }, { status: 402 });
     }
@@ -168,21 +171,34 @@ export async function POST(request: NextRequest) {
     charged = true;
   }
 
+  async function cropDataUri(box: DetectedItem["box"]): Promise<string> {
+    const left = Math.max(0, Math.round(box.x - CROP_PAD));
+    const top = Math.max(0, Math.round(box.y - CROP_PAD));
+    const width = Math.min(dim.width - left, Math.round(box.w + CROP_PAD * 2));
+    const height = Math.min(dim.height - top, Math.round(box.h + CROP_PAD * 2));
+    const buf = await sharp(design)
+      .extract({ left, top, width: Math.max(1, width), height: Math.max(1, height) })
+      .resize(320, 320, { fit: "inside" })
+      .jpeg({ quality: 80 })
+      .toBuffer();
+    return `data:image/jpeg;base64,${buf.toString("base64")}`;
+  }
+
   const groups = await Promise.all(
     validKeys.map(async (key): Promise<ShopGroup | null> => {
       const item = items[key];
-      if (!item.query) return null;
 
-      // Serve cached products if we already searched this item for this design.
-      const hit = cache[String(key)];
+      const hit = cache[cacheKey(key)];
       if (Array.isArray(hit)) {
-        return { key, item: pick(item), products: hit };
+        return { key, item: { category: item.category, label: item.label }, products: hit };
       }
 
-      let products: ShopProduct[] = [];
       try {
-        const raw = await searchProductsFR(item.query, searchKey);
-        const scores = await judgeMatches(resultUrl, item, raw, minimaxKey);
+        const crop = await cropDataUri(item.box);
+        const { query, target } = await describeCrop(crop, item.label, country.lang, minimaxKey!);
+        const raw = await searchProducts(query, searchKey!, country, 8);
+        if (raw.length === 0) return null;
+        const scores = await judgeMatches(crop, target, raw, minimaxKey!);
         const cap = itemCap(total, item.category);
         const scored = raw
           .map((r, i) => ({ r, score: scores[i] ?? 0 }))
@@ -190,41 +206,35 @@ export async function POST(request: NextRequest) {
 
         let pool = scored.filter((s) => s.score >= LOOKALIKE_MIN);
         if (pool.length === 0) pool = scored.filter((s) => s.score >= FALLBACK_MIN).slice(0, 2);
+        if (pool.length === 0) return null;
 
-        // Budget as a SOFT guide: prefer in-slice matches, top up with the best
-        // look-alikes (flagged over budget) so we never show an empty item.
         const inBudget = cap == null ? pool : pool.filter((s) => s.r.price != null && s.r.price <= cap);
         const chosen = [...inBudget];
-        if (chosen.length < PER_ITEM) {
-          for (const s of pool) {
-            if (chosen.length >= PER_ITEM) break;
-            if (!chosen.includes(s)) chosen.push(s);
-          }
+        for (const s of pool) {
+          if (chosen.length >= PER_ITEM) break;
+          if (!chosen.includes(s)) chosen.push(s);
         }
-        products = chosen.slice(0, PER_ITEM).map(({ r }) => ({
+        const products: ShopProduct[] = chosen.slice(0, PER_ITEM).map(({ r }) => ({
           title: r.title,
           price: r.price,
-          currency: "EUR",
+          currency: country.currency,
           imageUrl: r.thumbnail,
           deeplink: r.link,
           brand: r.seller,
           overBudget: cap != null && r.price != null && r.price > cap,
         }));
+        if (products.length === 0) return null;
+        cache[cacheKey(key)] = products;
+        return { key, item: { category: item.category, label: item.label }, products };
       } catch {
-        return null; // a single item's search failing shouldn't sink the rest
+        return null; // one item failing shouldn't sink the rest
       }
-
-      if (products.length === 0) return null;
-      cache[String(key)] = products; // accumulate for the cache write
-      return { key, item: pick(item), products };
     }),
   );
 
   const result = groups.filter((g): g is ShopGroup => g !== null);
 
   if (charged && result.length === 0) {
-    // Nothing found — refund the credit and leave the design unpaid so the user
-    // can try again later without being charged for an empty result.
     const { data } = await admin.rpc("add_credits_for", {
       p_user_id: user.id,
       p_amount: 1,
@@ -232,8 +242,6 @@ export async function POST(request: NextRequest) {
     });
     if (typeof data === "number") balance = data;
   } else {
-    // Persist the cache and, if this was the paid search, mark the design paid.
-    // Best-effort — never fail the request on a write.
     await admin
       .from("generations")
       .update(charged ? { shop_results: cache, shop_paid: true } : { shop_results: cache })
@@ -243,9 +251,5 @@ export async function POST(request: NextRequest) {
       });
   }
 
-  return NextResponse.json({ generationId, groups: result, balance });
-}
-
-function pick(item: DesignItem): { category: string; label: string; query: string } {
-  return { category: item.category, label: item.label, query: item.query };
+  return NextResponse.json({ generationId, country: country.code, groups: result, balance });
 }

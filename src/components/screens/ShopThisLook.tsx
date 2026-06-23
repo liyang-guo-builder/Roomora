@@ -8,6 +8,7 @@ import { useFlow } from "@/components/flow/FlowProvider";
 import { Icon } from "@/components/ui";
 import { shopService, type ShopGroup, type ShopProduct } from "@/lib/services";
 import { CATEGORY_LABELS } from "@/lib/shop/categories";
+import { SHOP_COUNTRIES, DEFAULT_COUNTRY } from "@/lib/shop/countries";
 
 /** Real shopping is gated by NEXT_PUBLIC_SHOP_LIVE (also enforced server-side).
  *  When off, show a soft "coming soon" teaser instead of the picker. */
@@ -99,12 +100,13 @@ function Group({ group }: { group: ShopGroup }) {
 }
 
 export function ShopThisLook({ generationId }: { generationId: string }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const anon = useStore((s) => s.anon);
   const setCredits = useStore((s) => s.setCredits);
   const { openModal } = useFlow();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [showMinor, setShowMinor] = useState(false);
+  const [country, setCountry] = useState(DEFAULT_COUNTRY);
 
   const itemsQuery = useQuery({
     queryKey: ["shop-items", generationId],
@@ -115,7 +117,7 @@ export function ShopThisLook({ generationId }: { generationId: string }) {
   });
 
   const search = useMutation({
-    mutationFn: (keys: number[]) => shopService.search(generationId, keys),
+    mutationFn: (keys: number[]) => shopService.search(generationId, keys, country),
     onSuccess: (data) => {
       if (typeof data.balance === "number") setCredits(data.balance);
     },
@@ -218,6 +220,21 @@ export function ShopThisLook({ generationId }: { generationId: string }) {
           "选择你想购买的单品，我们会在你的预算内找到相似的商品。",
         )}
       </p>
+
+      <div className="flex items-center justify-between mb-3 px-1">
+        <span className="text-[12px] text-ink-2">{t("Shopping in", "购买地区")}</span>
+        <select
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          className="text-[12.5px] font-medium text-ink bg-surface border border-line rounded-lg px-2 py-1.5 outline-none focus:border-sage"
+        >
+          {SHOP_COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {lang === "en" ? c.label[0] : c.label[1]}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="space-y-2">
         {hero.map((it) => (

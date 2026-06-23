@@ -52,4 +52,12 @@ describe("parseJudgeScores", () => {
     expect(parseJudgeScores('```json\n[{"i":1,"score":50}]\n```')).toEqual([{ i: 1, score: 50 }]);
     expect(parseJudgeScores("no scores here")).toEqual([]);
   });
+
+  it("falls back to parsing prose when the model ignores JSON", () => {
+    const raw = "Here is the scoring:\nCandidate 1: 85\nCandidate 2: 40\nCandidate 3: 90";
+    const out = parseJudgeScores(raw);
+    expect(out).toContainEqual({ i: 1, score: 85 });
+    expect(out).toContainEqual({ i: 2, score: 40 });
+    expect(out).toContainEqual({ i: 3, score: 90 });
+  });
 });

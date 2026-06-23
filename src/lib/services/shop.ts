@@ -44,6 +44,8 @@ export interface ItemizeResult {
 export interface ShopResult {
   generationId: string;
   groups: ShopGroup[];
+  /** Market the search ran in (country code). */
+  country?: string;
   /** Credit balance after the (possibly charged) search; null if not charged. */
   balance?: number | null;
 }
@@ -67,8 +69,8 @@ export const shopService = {
     return postShop<ItemizeResult>({ generationId, action: "itemize" });
   },
 
-  /** Search + match products for the chosen item keys (the costly step). */
-  search(generationId: string, keys: number[]): Promise<ShopResult> {
-    return postShop<ShopResult>({ generationId, action: "search", keys });
+  /** Search + match products for the chosen item keys in a given market. */
+  search(generationId: string, keys: number[], country: string): Promise<ShopResult> {
+    return postShop<ShopResult>({ generationId, action: "search", keys, country });
   },
 };

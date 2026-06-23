@@ -1,41 +1,35 @@
 /* Roomora — vision "match judge" for "Shop this look".
-   Given the design image and one spotted item, scores how closely each candidate
-   product looks like THAT item (silhouette, colour, material, size class). This
-   is the precision layer: Google Shopping gives breadth + price, the judge keeps
-   only genuine look-alikes. Server-only (uses MINIMAX_API_KEY). */
+   Scores how closely each candidate product looks like the TARGET item, where
+   the target is a CLEAN CROP of that one item (from Florence-2 + sharp), not the
+   whole room. Judging a focused crop is both reliable and precise. The model is
+   forced to reply with JSON only (it lapses into prose otherwise). Server-only. */
 
 import "server-only";
 import sharp from "sharp";
 import { parseJudgeScores } from "./parseItems";
-import type { DesignItem } from "./itemizer";
 import type { RawProduct } from "./search";
 
-/** Fetch an image and inline it as a base64 data URI (MiniMax rejects remote
- *  URLs). Optionally downscale to `w` px (square-ish, inside-fit) to save tokens. */
-async function toDataUri(url: string, w?: number): Promise<string> {
+/** Fetch a thumbnail and inline it as a small base64 data URI (MiniMax rejects
+ *  remote URLs). */
+async function thumbToDataUri(url: string, w = 160): Promise<string> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`image_fetch_failed ${res.status}`);
-  const orig = Buffer.from(await res.arrayBuffer());
-  if (w) {
-    const small = await sharp(orig)
-      .resize(w, w, { fit: "inside" })
-      .jpeg({ quality: 72 })
-      .toBuffer();
-    return `data:image/jpeg;base64,${small.toString("base64")}`;
-  }
-  const ct = res.headers.get("content-type") || "image/jpeg";
-  return `data:${ct};base64,${orig.toString("base64")}`;
+  const small = await sharp(Buffer.from(await res.arrayBuffer()))
+    .resize(w, w, { fit: "inside" })
+    .jpeg({ quality: 72 })
+    .toBuffer();
+  return `data:image/jpeg;base64,${small.toString("base64")}`;
 }
 
 /**
- * Score each candidate 0-100 for how closely it matches `item` as seen in the
- * design image. Returns an array aligned to `candidates` (0 for any candidate
- * whose thumbnail could not be fetched or that the model did not score).
- * Best-effort: throws only on a hard MiniMax transport/auth failure.
+ * Score each candidate 0-100 for how closely it matches the target crop.
+ * `targetDataUri` is a base64 data URI of the cropped item. Returns an array
+ * aligned to `candidates` (0 for any candidate that couldn't be fetched/scored).
+ * Throws only on a hard MiniMax transport/auth failure after a retry.
  */
 export async function judgeMatches(
-  designUrl: string,
-  item: DesignItem,
+  targetDataUri: string,
+  targetDesc: string,
   candidates: RawProduct[],
   apiKey: string,
 ): Promise<number[]> {
@@ -44,15 +38,12 @@ export async function judgeMatches(
 
   const base =
     process.env.MINIMAX_BASE_URL?.replace(/\/+$/, "") || "https://api.minimaxi.com";
-  const designUri = await toDataUri(designUrl, 512);
 
-  // Fetch candidate thumbnails as small data URIs; keep index mapping for ones
-  // that succeed (a failed thumbnail simply stays scored 0).
   const fetched: { origIdx: number; uri: string; title: string }[] = [];
   await Promise.all(
     candidates.map(async (c, idx) => {
       try {
-        const uri = await toDataUri(c.thumbnail, 200);
+        const uri = await thumbToDataUri(c.thumbnail);
         fetched.push({ origIdx: idx, uri, title: c.title });
       } catch {
         /* leave at 0 */
@@ -60,59 +51,67 @@ export async function judgeMatches(
     }),
   );
   if (fetched.length === 0) return scores;
-  // Stable order for numbering in the prompt.
   fetched.sort((a, b) => a.origIdx - b.origIdx);
 
   const n = fetched.length;
   const prompt =
-    `You are a strict furniture match judge for a "shop this look" feature.\n` +
-    `The FIRST image is an interior design. Focus ONLY on this item within it: ` +
-    `${item.label}${item.target ? ` (${item.target})` : ""}.\n` +
-    `The next ${n} images are CANDIDATE products, numbered 1 to ${n}.\n` +
-    `Score how closely EACH candidate matches THAT item on silhouette/shape, ` +
-    `colour, material and SIZE CLASS. A wrong size class (e.g. a 3-seater or large ` +
-    `sectional when the target is a small 2-seater) or a clearly different form ` +
-    `must score low.\n` +
-    `You MUST return a score for EVERY candidate from 1 to ${n} — exactly ${n} ` +
-    `objects, even poor matches (give them low scores). Return ONLY a JSON array ` +
-    `in order, nothing else: [${Array.from({ length: n }, (_, k) => `{"i":${k + 1},"score":<0-100>}`).join(",")}]. ` +
-    `85+ means a genuine look-alike a customer would accept.`;
+    `You are a furniture match scorer. Image 1 is the TARGET item` +
+    `${targetDesc ? ` (${targetDesc})` : ""}. ` +
+    `Images 2 to ${n + 1} are CANDIDATE products, numbered 1 to ${n}. ` +
+    `For EACH candidate give a 0-100 score for how visually similar it is to the ` +
+    `TARGET on shape, colour, material and size. A clearly different shape ` +
+    `(for example round when the target is rectangular, or a 3-seater when the ` +
+    `target is a 2-seater) or material must score below 40. ` +
+    `Your ENTIRE reply must be ONLY a JSON array, starting with [ and ending ` +
+    `with ], with no words or explanation before or after: ` +
+    `[${Array.from({ length: n }, (_, k) => `{"i":${k + 1},"score":0}`).join(",")}]`;
 
   const content: unknown[] = [
     { type: "text", text: prompt },
-    { type: "image_url", image_url: { url: designUri } },
+    { type: "image_url", image_url: { url: targetDataUri } },
   ];
-  fetched.forEach((f, n) => {
-    content.push({ type: "text", text: `Candidate ${n + 1}: ${f.title}` });
+  fetched.forEach((f, k) => {
+    content.push({ type: "text", text: `Candidate ${k + 1}: ${f.title}` });
     content.push({ type: "image_url", image_url: { url: f.uri } });
   });
 
-  const res = await fetch(`${base}/v1/text/chatcompletion_v2`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "MiniMax-Text-01",
-      messages: [{ role: "user", content }],
-      temperature: 0.2,
-      max_tokens: 1024,
-    }),
-  });
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`minimax_error ${res.status}: ${detail.slice(0, 200)}`);
+  async function callOnce(): Promise<{ i: number; score: number }[]> {
+    const res = await fetch(`${base}/v1/text/chatcompletion_v2`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "MiniMax-Text-01",
+        messages: [{ role: "user", content }],
+        temperature: 0.1,
+        max_tokens: 800,
+      }),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(`minimax_error ${res.status}: ${detail.slice(0, 200)}`);
+    }
+    const json = (await res.json()) as {
+      choices?: { message?: { content?: string } }[];
+      base_resp?: { status_code?: number; status_msg?: string };
+    };
+    if (json.base_resp && json.base_resp.status_code !== 0) {
+      throw new Error(`minimax_status ${json.base_resp.status_code}`);
+    }
+    return parseJudgeScores(json.choices?.[0]?.message?.content ?? "");
   }
-  const json = (await res.json()) as {
-    choices?: { message?: { content?: string } }[];
-    base_resp?: { status_code?: number; status_msg?: string };
-  };
-  if (json.base_resp && json.base_resp.status_code !== 0) {
-    throw new Error(
-      `minimax_status ${json.base_resp.status_code}: ${json.base_resp.status_msg ?? ""}`,
-    );
+
+  let parsed: { i: number; score: number }[] = [];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      parsed = await callOnce();
+      if (parsed.length > 0) break;
+    } catch (err) {
+      if (attempt === 1) throw err;
+    }
   }
-  const raw = json.choices?.[0]?.message?.content ?? "";
-  for (const p of parseJudgeScores(raw)) {
-    const slot = fetched[p.i - 1]; // prompt numbering is 1-based
+
+  for (const p of parsed) {
+    const slot = fetched[p.i - 1];
     if (slot) scores[slot.origIdx] = Math.max(0, Math.min(100, p.score));
   }
   return scores;

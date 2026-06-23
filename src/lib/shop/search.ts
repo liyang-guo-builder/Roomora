@@ -19,19 +19,28 @@ export interface RawProduct {
   thumbnail: string;
 }
 
+export interface SearchLocale {
+  gl: string;
+  hl: string;
+  location: string;
+}
+
 /**
- * Search Google Shopping in France (EUR, French retailers) for one query.
+ * Search Google Shopping in the given market (e.g. France, Spain) for one query.
  * Returns up to `limit` listings that have a thumbnail. Throws on transport /
  * API failure so the caller can surface an error.
  */
-export async function searchProductsFR(
+export async function searchProducts(
   query: string,
   apiKey: string,
-  limit = 14,
+  locale: SearchLocale,
+  limit = 8,
 ): Promise<RawProduct[]> {
   const url =
     `https://www.searchapi.io/api/v1/search?engine=google_shopping` +
-    `&q=${encodeURIComponent(query)}&gl=fr&hl=fr&location=France` +
+    `&q=${encodeURIComponent(query)}` +
+    `&gl=${encodeURIComponent(locale.gl)}&hl=${encodeURIComponent(locale.hl)}` +
+    `&location=${encodeURIComponent(locale.location)}` +
     `&api_key=${apiKey}`;
   const res = await fetch(url);
   if (!res.ok) {
