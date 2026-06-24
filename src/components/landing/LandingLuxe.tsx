@@ -410,7 +410,11 @@ export function LandingLuxe() {
             </Eyebrow>
           </Reveal>
           <Reveal delay={0.08}>
-            <h1 className="mx-auto mt-[22px] max-w-[18ch] font-[family-name:var(--font-playfair)] font-medium text-[clamp(40px,6.4vw,66px)] leading-[1.04] tracking-[-0.01em]">
+            <h1
+              className={`mx-auto mt-[22px] font-[family-name:var(--font-playfair)] font-medium text-[clamp(40px,6.4vw,66px)] leading-[1.04] tracking-[-0.01em] ${
+                lang === "fr" ? "max-w-[26ch]" : "max-w-[18ch]"
+              }`}
+            >
               {t(
                 "Fall for the room you already have, ",
                 "让你现在的家，",
