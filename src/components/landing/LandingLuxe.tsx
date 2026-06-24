@@ -216,7 +216,7 @@ export function LandingLuxe() {
     {
       before: "/examples/show-living-before.jpg",
       after: "/examples/show-living-after.jpg",
-      label: t("Living room · Modern", "客厅 · 现代简约"),
+      label: t("Living room · Mid-Century", "客厅 · 中古风"),
     },
     {
       before: "/examples/show-bed-before.jpg",
@@ -431,8 +431,8 @@ export function LandingLuxe() {
             <BeforeAfter
               height={340}
               className="!rounded-[4px] w-full"
-              beforeUrl="/examples/room-before.jpg"
-              afterUrl="/examples/proof_scandi.png"
+              beforeUrl="/examples/feat-living-before.jpg"
+              afterUrl="/examples/feat-living-after.jpg"
             />
           </Reveal>
         </div>
