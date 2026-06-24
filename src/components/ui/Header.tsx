@@ -38,9 +38,8 @@ export function CreditPill({ onClick }: { onClick?: () => void }) {
   const lang = useStore((s) => s.lang);
   // Anonymous users see remaining free designs; signed-in users see credits.
   const low = anon ? freeLeft <= 0 : credits <= 2;
-  const label = anon
-    ? `${freeLeft} ${lang === "en" ? "free" : "免费"}`
-    : `${credits}`;
+  const freeWord = lang === "zh" ? "免费" : lang === "fr" ? "gratuits" : "free";
+  const label = anon ? `${freeLeft} ${freeWord}` : `${credits}`;
   return (
     <button
       onClick={onClick}

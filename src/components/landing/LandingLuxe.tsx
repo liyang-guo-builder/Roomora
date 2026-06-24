@@ -7,13 +7,49 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { STYLES } from "@/lib/constants";
+import type { Lang } from "@/lib/types";
 import { BeforeAfter } from "@/components/ui/BeforeAfter";
 
-/** i18n hook plus `setLang` so the marketing nav can toggle EN / 中文 inline. */
+/** i18n hook plus `setLang` so the marketing nav can toggle EN / 中文 / FR. */
 function useLandingLang() {
   const { t, lang } = useT();
   const setLang = useStore((s) => s.setLang);
   return { t, lang, setLang };
+}
+
+/** Three-way language switch (EN / 中 / FR) used in the nav and footer. */
+function LangSwitch({
+  lang,
+  setLang,
+  light = false,
+}: {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  light?: boolean;
+}) {
+  const opts: [Lang, string][] = [
+    ["en", "EN"],
+    ["zh", "中"],
+    ["fr", "FR"],
+  ];
+  const muted = light ? "text-white/55 hover:text-white" : "text-[#9a917c] hover:text-[#221F18]";
+  const on = light ? "text-white" : "text-[#221F18]";
+  return (
+    <div className="flex items-center gap-2 text-[12px] uppercase tracking-[0.14em]">
+      {opts.map(([k, lab], i) => (
+        <span key={k} className="flex items-center gap-2">
+          {i > 0 && <span className={light ? "text-white/35" : "text-[#c9c1ad]"}>·</span>}
+          <button
+            type="button"
+            onClick={() => setLang(k)}
+            className={`transition-colors ${lang === k ? on : muted}`}
+          >
+            {lab}
+          </button>
+        </span>
+      ))}
+    </div>
+  );
 }
 
 /* ───────────────────────── motion helpers ───────────────────────── */
@@ -176,37 +212,37 @@ export function LandingLuxe() {
   // Pricing tiers
   const pricing = [
     {
-      tag: t("Free", "免费"),
-      name: t("First look", "初次体验"),
-      price: t("1 free try", "1 次免费"),
-      note: t("No sign-up needed", "无需注册"),
+      tag: t("Free", "免费", "Gratuit"),
+      name: t("First look", "初次体验", "Premier essai"),
+      price: t("1 free try", "1 次免费", "1 essai gratuit"),
+      note: t("No sign-up needed", "无需注册", "Sans inscription"),
       points: [
-        t("One full redesign", "一次完整的重新设计"),
-        t("Any of the 13 styles", "13 种风格任选"),
-        t("Shoppable list included", "含可购买清单"),
+        t("One full redesign", "一次完整的重新设计", "Un relooking complet"),
+        t("Any of the 13 styles", "13 种风格任选", "Au choix parmi 13 styles"),
+        t("Shoppable list included", "含可购买清单", "Liste d’achats incluse"),
       ],
     },
     {
-      tag: t("Popular", "热门"),
-      name: t("Create an account", "注册账户"),
-      price: t("+3 free", "再得 3 次"),
-      note: t("Save your designs", "保存你的设计"),
+      tag: t("Popular", "热门", "Populaire"),
+      name: t("Create an account", "注册账户", "Créer un compte"),
+      price: t("+3 free", "再得 3 次", "+3 gratuits"),
+      note: t("Save your designs", "保存你的设计", "Enregistrez vos designs"),
       points: [
-        t("Three more redesigns", "再获三次重新设计"),
-        t("Save & revisit your rooms", "保存并回看你的房间"),
-        t("Refine with words", "用文字微调"),
+        t("Three more redesigns", "再获三次重新设计", "Trois relookings de plus"),
+        t("Save & revisit your rooms", "保存并回看你的房间", "Enregistrez et retrouvez vos pièces"),
+        t("Refine with words", "用文字微调", "Affinez avec des mots"),
       ],
       featured: true,
     },
     {
-      tag: t("Top up", "充值"),
-      name: t("Credit packs", "积分包"),
-      price: t("From a few €", "几欧元起"),
-      note: t("Pay as you go", "按需付费"),
+      tag: t("Top up", "充值", "Recharge"),
+      name: t("Credit packs", "积分包", "Packs de crédits"),
+      price: t("From a few €", "几欧元起", "À partir de quelques €"),
+      note: t("Pay as you go", "按需付费", "Payez à l’usage"),
       points: [
-        t("Buy credits in bundles", "成套购买积分"),
-        t("Never expire", "永不过期"),
-        t("Best value per design", "单次设计更划算"),
+        t("Buy credits in bundles", "成套购买积分", "Achetez des crédits en lots"),
+        t("Never expire", "永不过期", "Sans expiration"),
+        t("Best value per design", "单次设计更划算", "Le meilleur prix par design"),
       ],
     },
   ];
@@ -216,22 +252,22 @@ export function LandingLuxe() {
     {
       before: "/examples/show-living-before.jpg",
       after: "/examples/show-living-after.jpg",
-      label: t("Living room · Mid-Century", "客厅 · 中古风"),
+      label: t("Living room · Mid-Century", "客厅 · 中古风", "Salon · Mid-Century"),
     },
     {
       before: "/examples/show-bed-before.jpg",
       after: "/examples/show-bed-after.jpg",
-      label: t("Bedroom · Cream", "卧室 · 奶油风"),
+      label: t("Bedroom · Cream", "卧室 · 奶油风", "Chambre · Crème"),
     },
     {
       before: "/examples/show-kitchen-before.jpg",
       after: "/examples/show-kitchen-after.jpg",
-      label: t("Kitchen · Modern", "厨房 · 现代简约"),
+      label: t("Kitchen · Modern", "厨房 · 现代简约", "Cuisine · Moderne"),
     },
     {
       before: "/examples/show-garden-before.jpg",
       after: "/examples/show-garden-after.jpg",
-      label: t("Terrace · Cosy outdoor", "露台 · 惬意户外"),
+      label: t("Terrace · Cosy outdoor", "露台 · 惬意户外", "Terrasse · Extérieur cosy"),
     },
   ];
 
@@ -239,26 +275,29 @@ export function LandingLuxe() {
   const steps = [
     {
       n: "01",
-      title: t("Upload a photo", "上传一张照片"),
+      title: t("Upload a photo", "上传一张照片", "Importez une photo"),
       body: t(
         "Snap or pick a photo of the room you actually live in.",
         "拍一张或选一张你真实居住的房间照片。",
+        "Prenez ou choisissez une photo de la pièce où vous vivez vraiment.",
       ),
     },
     {
       n: "02",
-      title: t("Pick or describe a style", "选择或描述风格"),
+      title: t("Pick or describe a style", "选择或描述风格", "Choisissez ou décrivez un style"),
       body: t(
         "Choose a curated style, or tell us the look in your own words.",
         "选择一种精选风格,或用你自己的话描述想要的样子。",
+        "Choisissez un style proposé, ou décrivez l’ambiance avec vos mots.",
       ),
     },
     {
       n: "03",
-      title: t("Design + shopping list", "设计 + 购物清单"),
+      title: t("Design + shopping list", "设计 + 购物清单", "Design + liste d’achats"),
       body: t(
         "Get your restyled room and a list of real, buyable pieces.",
         "获得焕新后的房间,以及一份真实可购买的家具清单。",
+        "Recevez votre pièce relookée et une liste de meubles réels et achetables.",
       ),
     },
   ];
@@ -266,41 +305,49 @@ export function LandingLuxe() {
   // FAQ
   const faqs = [
     {
-      q: t("Does it really keep my room's structure?", "它真的会保留我房间的结构吗?"),
+      q: t(
+        "Does it really keep my room's structure?",
+        "它真的会保留我房间的结构吗?",
+        "Est-ce que ça garde vraiment la structure de ma pièce ?",
+      ),
       a: t(
         "Yes. We keep your walls, windows, doors and proportions in place and only restyle the furnishing. We never invent windows or move walls, so the result still reads as your room.",
         "是的。我们会保留你的墙面、窗户、门和空间比例,只对家具陈设进行重新设计。我们不会凭空添加窗户或移动墙体,所以效果依然是你认得出的那个房间。",
+        "Oui. Nous conservons vos murs, fenêtres, portes et proportions, et ne retravaillons que le mobilier. Nous n’inventons jamais de fenêtres et ne déplaçons pas les murs : le résultat reste votre pièce.",
       ),
     },
     {
-      q: t("Is my photo private?", "我的照片是私密的吗?"),
+      q: t("Is my photo private?", "我的照片是私密的吗?", "Ma photo est-elle confidentielle ?"),
       a: t(
         "Your photo stays private. It is used only to generate your design and is never shown publicly or sold. You stay in control of what you share.",
         "你的照片始终保持私密,仅用于生成你的设计,绝不会公开展示或出售。你完全掌控自己分享的内容。",
+        "Votre photo reste privée. Elle sert uniquement à générer votre design et n’est jamais rendue publique ni vendue. Vous gardez le contrôle de ce que vous partagez.",
       ),
     },
     {
-      q: t("What languages does it work in?", "它支持哪些语言?"),
+      q: t("What languages does it work in?", "它支持哪些语言?", "Dans quelles langues est-ce disponible ?"),
       a: t(
-        "Roomora is fully bilingual in English and 简体中文, with copy and styles tuned for life in Paris and across Europe.",
-        "Roomora 完整支持英文和简体中文双语,文案与风格针对巴黎及欧洲的生活方式做了优化。",
+        "Roomora works in French, English and 简体中文, with copy and styles tuned for life in Paris and across Europe.",
+        "Roomora 支持法语、英语和简体中文,文案与风格针对巴黎及欧洲的生活方式做了优化。",
+        "Roomora est disponible en français, en anglais et en 简体中文, avec des textes et des styles pensés pour la vie à Paris et en Europe.",
       ),
     },
     {
-      q: t("How much does it cost?", "费用是多少?"),
+      q: t("How much does it cost?", "费用是多少?", "Combien ça coûte ?"),
       a: t(
         "Start free with one try, no sign-up. Create an account for three more free designs, then top up with affordable credit packs when you want more.",
         "免费开始,首次体验无需注册。注册账户即可再获三次免费设计,需要更多时可通过实惠的积分包充值。",
+        "Commencez gratuitement avec un essai, sans inscription. Créez un compte pour trois designs gratuits de plus, puis rechargez avec des packs de crédits abordables quand vous en voulez plus.",
       ),
     },
   ];
 
   // Trust strip
   const trust = [
-    t("Keeps your structure", "保留房间结构"),
-    t("Photo stays private", "照片保持私密"),
-    t("Free to try, no signup", "免费试用,无需注册"),
-    t("Made for Paris / EU", "为巴黎 / 欧洲打造"),
+    t("Keeps your structure", "保留房间结构", "Garde votre structure"),
+    t("Photo stays private", "照片保持私密", "Photo confidentielle"),
+    t("Free to try, no signup", "免费试用,无需注册", "Essai gratuit, sans inscription"),
+    t("Made for Paris / EU", "为巴黎 / 欧洲打造", "Pensé pour Paris / l’Europe"),
   ];
 
   // Style gallery: 13 tiles. French / Japandi / Scandi flagged "Popular in Paris".
@@ -339,42 +386,42 @@ export function LandingLuxe() {
           </div>
           <div className="hidden items-center gap-9 text-[12px] uppercase tracking-[0.18em] text-white/85 md:flex">
             <a href="#how" className="transition-colors hover:text-white">
-              {t("How it works", "使用方法")}
+              {t("How it works", "使用方法", "Comment ça marche")}
             </a>
             <a href="#styles" className="transition-colors hover:text-white">
-              {t("Styles", "风格")}
+              {t("Styles", "风格", "Styles")}
             </a>
             <a href="#pricing" className="transition-colors hover:text-white">
-              {t("Pricing", "价格")}
+              {t("Pricing", "价格", "Tarifs")}
             </a>
-            <button
-              type="button"
-              onClick={() => setLang(lang === "en" ? "zh" : "en")}
-              className="uppercase tracking-[0.18em] transition-colors hover:text-white"
-            >
-              {lang === "en" ? "EN / 中文" : "中文 / EN"}
-            </button>
+            <LangSwitch lang={lang} setLang={setLang} light />
           </div>
-          {/* mobile language toggle */}
-          <button
-            type="button"
-            onClick={() => setLang(lang === "en" ? "zh" : "en")}
-            className="text-[12px] uppercase tracking-[0.18em] text-white/85 md:hidden"
-          >
-            {lang === "en" ? "中文" : "EN"}
-          </button>
+          {/* mobile language switch */}
+          <div className="md:hidden">
+            <LangSwitch lang={lang} setLang={setLang} light />
+          </div>
         </nav>
 
         {/* hero copy */}
         <div className="relative mx-auto max-w-[1140px] px-6 pt-[72px] text-center md:px-12 md:pt-[90px]">
           <Reveal>
-            <Eyebrow light>{t("AI interior redesign · Paris", "AI 室内焕新 · 巴黎")}</Eyebrow>
+            <Eyebrow light>
+              {t("AI interior redesign · Paris", "AI 室内焕新 · 巴黎", "Relooking d’intérieur par IA · Paris")}
+            </Eyebrow>
           </Reveal>
           <Reveal delay={0.08}>
             <h1 className="mx-auto mt-[22px] max-w-[18ch] font-[family-name:var(--font-playfair)] font-medium text-[clamp(40px,6.4vw,66px)] leading-[1.04] tracking-[-0.01em]">
-              {t("Fall for the room you already have, ", "爱上你早已拥有的房间,")}
+              {t(
+                "Fall for the room you already have, ",
+                "爱上你早已拥有的房间,",
+                "Tombez amoureux de la pièce que vous avez déjà, ",
+              )}
               <em className="italic">
-                {t("restyled into the look you love.", "焕新成你向往的模样。")}
+                {t(
+                  "restyled into the look you love.",
+                  "焕新成你向往的模样。",
+                  "transformée dans le style que vous aimez.",
+                )}
               </em>
             </h1>
           </Reveal>
@@ -383,13 +430,14 @@ export function LandingLuxe() {
               {t(
                 "Same walls, windows and light, you control what changes. Your real room, reimagined in 30 seconds.",
                 "墙面、窗户和光线照旧,改变什么由你决定。你真实的房间,30 秒内焕然一新。",
+                "Mêmes murs, mêmes fenêtres, même lumière : vous décidez de ce qui change. Votre vraie pièce, réimaginée en 30 secondes.",
               )}
             </p>
           </Reveal>
           <Reveal delay={0.24}>
             <div className="mt-8">
-              <CtaLight href="/app">{t("Try free →", "免费试用 →")}</CtaLight>
-              <CtaGhost href="#how">{t("See how it works", "了解使用方法")}</CtaGhost>
+              <CtaLight href="/app">{t("Try free →", "免费试用 →", "Essayer gratuitement →")}</CtaLight>
+              <CtaGhost href="#how">{t("See how it works", "了解使用方法", "Voir comment ça marche")}</CtaGhost>
             </div>
           </Reveal>
         </div>
@@ -413,18 +461,27 @@ export function LandingLuxe() {
       <Section>
         <div className="flex flex-col items-center gap-[54px] md:flex-row">
           <Reveal className="min-w-0 flex-1">
-            <Eyebrow>{t("Feature 01", "特色 01")}</Eyebrow>
+            <Eyebrow>{t("Feature 01", "特色 01", "Atout 01")}</Eyebrow>
             <H2 className="mt-3.5">
-              {t("Your room, redesigned. Still your room.", "你的房间,重新设计。依然是你的房间。")}
+              {t(
+                "Your room, redesigned. Still your room.",
+                "你的房间,重新设计。依然是你的房间。",
+                "Votre pièce, redessinée. Toujours la vôtre.",
+              )}
             </H2>
             <Sub className="mt-[18px]">
               {t(
                 "We keep your walls, windows, doors and proportions, and only restyle the furnishing. Pick a curated style, or describe your own. Drag the slider to see it on a real room.",
                 "我们保留你的墙面、窗户、门和比例,只对家具陈设进行重新设计。选择一种精选风格,或描述你自己的想法。拖动滑块,在真实房间上一探究竟。",
+                "Nous gardons vos murs, fenêtres, portes et proportions, et ne retravaillons que le mobilier. Choisissez un style proposé, ou décrivez le vôtre. Faites glisser le curseur pour le voir sur une vraie pièce.",
               )}
             </Sub>
             <MetaLabel>
-              {t("Scandi · Japandi · French · Cream · + 9 more", "北欧 · 日式简约 · 法式 · 奶油风 · 等 9 种")}
+              {t(
+                "Scandi · Japandi · French · Cream · + 9 more",
+                "北欧 · 日式简约 · 法式 · 奶油风 · 等 9 种",
+                "Scandi · Japandi · Français · Crème · + 9 autres",
+              )}
             </MetaLabel>
           </Reveal>
           <Reveal delay={0.12} className="min-w-0 flex-1">
@@ -445,7 +502,7 @@ export function LandingLuxe() {
             <div className="relative h-[340px] w-full overflow-hidden rounded-[4px] border border-[#E1DACC]">
               <Image
                 src="/examples/hero-modern.jpg"
-                alt={t("A finished Roomora design", "Roomora 完成的设计")}
+                alt={t("A finished Roomora design", "Roomora 完成的设计", "Un design Roomora finalisé")}
                 fill
                 sizes="(max-width: 768px) 100vw, 540px"
                 className="object-cover"
@@ -455,7 +512,7 @@ export function LandingLuxe() {
                 <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[2px]">
                   <Image
                     src="/examples/item-sofa.jpg"
-                    alt={t("Oak frame sofa", "橡木框架沙发")}
+                    alt={t("Linen curved sofa", "亚麻弧形沙发", "Canapé arrondi en lin")}
                     fill
                     sizes="48px"
                     className="object-cover"
@@ -463,26 +520,33 @@ export function LandingLuxe() {
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-[12px] font-medium text-[#221F18]">
-                    {t("Linen curved sofa", "亚麻弧形沙发")}
+                    {t("Linen curved sofa", "亚麻弧形沙发", "Canapé arrondi en lin")}
                   </p>
-                  <p className="text-[11px] text-[#6b6451]">{t("€690 · La Redoute", "€690 · La Redoute")}</p>
+                  <p className="text-[11px] text-[#6b6451]">{t("€690 · La Redoute", "€690 · La Redoute", "690 € · La Redoute")}</p>
                 </div>
                 <span className="ml-auto rounded-[2px] bg-[#221F18] px-3 py-1.5 text-[11px] font-medium text-[#F4F1EA]">
-                  {t("Buy", "购买")}
+                  {t("Buy", "购买", "Acheter")}
                 </span>
               </div>
             </div>
           </Reveal>
           <Reveal delay={0.12} className="order-1 min-w-0 flex-1 md:order-2">
-            <Eyebrow>{t("Feature 02", "特色 02")}</Eyebrow>
-            <H2 className="mt-3.5">{t("Shop the look in one tap.", "一键购买同款。")}</H2>
+            <Eyebrow>{t("Feature 02", "特色 02", "Atout 02")}</Eyebrow>
+            <H2 className="mt-3.5">{t("Shop the look in one tap.", "一键购买同款。", "Achetez le look en un clic.")}</H2>
             <Sub className="mt-[18px]">
               {t(
                 "From your finished design we auto-list the real, buyable pieces, French retailers, euro prices, within your budget. Click to order.",
                 "根据你完成的设计,我们自动列出真实可购买的家具,法国零售商、欧元定价、符合你的预算。点击即可下单。",
+                "À partir de votre design finalisé, nous listons automatiquement les pièces réelles et achetables : enseignes françaises, prix en euros, dans votre budget. Cliquez pour commander.",
               )}
             </Sub>
-            <MetaLabel>{t("Real pieces · € prices · French stores", "真实家具 · 欧元定价 · 法国门店")}</MetaLabel>
+            <MetaLabel>
+              {t(
+                "Real pieces · € prices · French stores",
+                "真实家具 · 欧元定价 · 法国门店",
+                "Vraies pièces · Prix en € · Enseignes françaises",
+              )}
+            </MetaLabel>
           </Reveal>
         </div>
       </Section>
@@ -490,8 +554,8 @@ export function LandingLuxe() {
       {/* ───────── 5. How it works ───────── */}
       <Section id="how" center>
         <Reveal>
-          <Eyebrow>{t("How it works", "使用方法")}</Eyebrow>
-          <H2 className="mt-3.5">{t("Three steps", "三个步骤")}</H2>
+          <Eyebrow>{t("How it works", "使用方法", "Comment ça marche")}</Eyebrow>
+          <H2 className="mt-3.5">{t("Three steps", "三个步骤", "Trois étapes")}</H2>
         </Reveal>
         <div className="mt-10 grid gap-5 text-left md:grid-cols-3">
           {steps.map((s, i) => (
@@ -511,8 +575,8 @@ export function LandingLuxe() {
       {/* ───────── 6. The styles — 13-tile gallery ───────── */}
       <Section id="styles">
         <Reveal>
-          <Eyebrow>{t("The styles", "风格")}</Eyebrow>
-          <H2 className="mt-3.5">{t("Thirteen looks", "十三种风格")}</H2>
+          <Eyebrow>{t("The styles", "风格", "Les styles")}</Eyebrow>
+          <H2 className="mt-3.5">{t("Thirteen looks", "十三种风格", "Treize ambiances")}</H2>
         </Reveal>
         <div className="mt-8 grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {STYLES.map((s, i) => (
@@ -528,7 +592,7 @@ export function LandingLuxe() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#221F18]/70 via-transparent to-transparent" />
                 {popular.has(s.id) && (
                   <span className="absolute right-2 top-2 rounded-[2px] bg-[#8B9173] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] text-[#F4F1EA]">
-                    {t("Popular in Paris", "巴黎热门")}
+                    {t("Popular in Paris", "巴黎热门", "Populaire à Paris")}
                   </span>
                 )}
                 <span className="absolute bottom-2 left-2.5 text-[12px] font-medium text-[#F4F1EA]">
@@ -543,12 +607,15 @@ export function LandingLuxe() {
       {/* ───────── 7. Selected work — before/after showcase ───────── */}
       <Section>
         <Reveal>
-          <Eyebrow>{t("Any room", "适用任何空间")}</Eyebrow>
-          <H2 className="mt-3.5">{t("Before, and after, in any space.", "改造前后，适用任何空间。")}</H2>
+          <Eyebrow>{t("Any room", "适用任何空间", "Toutes les pièces")}</Eyebrow>
+          <H2 className="mt-3.5">
+            {t("Before, and after, in any space.", "改造前后，适用任何空间。", "Avant, et après, dans chaque espace.")}
+          </H2>
           <Sub className="mt-[18px] max-w-[54ch]">
             {t(
               "Living rooms, bedrooms, kitchens, even the garden. Your real space, restyled, and still yours.",
               "客厅、卧室、厨房，甚至花园露台。你的真实空间，焕新依旧是你的。",
+              "Salons, chambres, cuisines, et même le jardin. Votre véritable espace, relooké, et toujours le vôtre.",
             )}
           </Sub>
         </Reveal>
@@ -574,8 +641,8 @@ export function LandingLuxe() {
       {/* ───────── 8. Pricing ───────── */}
       <Section id="pricing" center>
         <Reveal>
-          <Eyebrow>{t("Pricing", "价格")}</Eyebrow>
-          <H2 className="mt-3.5">{t("Start free.", "免费开始。")}</H2>
+          <Eyebrow>{t("Pricing", "价格", "Tarifs")}</Eyebrow>
+          <H2 className="mt-3.5">{t("Start free.", "免费开始。", "Commencez gratuitement.")}</H2>
         </Reveal>
         <div className="mt-9 grid gap-5 text-left md:grid-cols-3">
           {pricing.map((p, i) => (
@@ -612,7 +679,7 @@ export function LandingLuxe() {
                         : "border border-[#221F18] text-[#221F18] hover:bg-[#221F18] hover:text-[#F4F1EA]"
                     }`}
                   >
-                    {t("Try free →", "免费试用 →")}
+                    {t("Try free →", "免费试用 →", "Essayer gratuitement →")}
                   </Link>
                 </div>
               </div>
@@ -624,8 +691,8 @@ export function LandingLuxe() {
       {/* ───────── 9. FAQ ───────── */}
       <Section>
         <Reveal>
-          <Eyebrow>{t("Questions", "常见问题")}</Eyebrow>
-          <H2 className="mt-3.5">{t("Good to know", "你想了解的")}</H2>
+          <Eyebrow>{t("Questions", "常见问题", "Questions")}</Eyebrow>
+          <H2 className="mt-3.5">{t("Good to know", "你想了解的", "Bon à savoir")}</H2>
         </Reveal>
         <Reveal delay={0.08} className="mt-7 border-t border-[#E1DACC]">
           {faqs.map((f) => (
@@ -638,11 +705,11 @@ export function LandingLuxe() {
       <section className="bg-gradient-to-b from-[#2b2922] to-[#1c1a15] px-6 py-[84px] text-center text-[#F4F1EA]">
         <Reveal>
           <h2 className="mx-auto max-w-[20ch] font-[family-name:var(--font-playfair)] font-medium text-[clamp(34px,5.5vw,48px)] leading-[1.08]">
-            {t("Redesign your real room ", "焕新你真实的房间,")}
-            <em className="italic">{t("in 30 seconds.", "仅需 30 秒。")}</em>
+            {t("Redesign your real room ", "焕新你真实的房间,", "Redessinez votre vraie pièce ")}
+            <em className="italic">{t("in 30 seconds.", "仅需 30 秒。", "en 30 secondes.")}</em>
           </h2>
           <div className="mt-8">
-            <CtaLight href="/app">{t("Try free →", "免费试用 →")}</CtaLight>
+            <CtaLight href="/app">{t("Try free →", "免费试用 →", "Essayer gratuitement →")}</CtaLight>
           </div>
         </Reveal>
       </section>
@@ -664,24 +731,18 @@ export function LandingLuxe() {
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
             <a href="#styles" className="transition-colors hover:text-[#F4F1EA]">
-              {t("Styles", "风格")}
+              {t("Styles", "风格", "Styles")}
             </a>
             <a href="#pricing" className="transition-colors hover:text-[#F4F1EA]">
-              {t("Pricing", "价格")}
+              {t("Pricing", "价格", "Tarifs")}
             </a>
             <Link href="/terms" className="transition-colors hover:text-[#F4F1EA]">
-              {t("Terms", "条款")}
+              {t("Terms", "条款", "Conditions")}
             </Link>
             <Link href="/privacy" className="transition-colors hover:text-[#F4F1EA]">
-              {t("Privacy", "隐私")}
+              {t("Privacy", "隐私", "Confidentialité")}
             </Link>
-            <button
-              type="button"
-              onClick={() => setLang(lang === "en" ? "zh" : "en")}
-              className="uppercase tracking-[0.08em] transition-colors hover:text-[#F4F1EA]"
-            >
-              EN / 中文
-            </button>
+            <LangSwitch lang={lang} setLang={setLang} />
           </div>
         </div>
       </footer>

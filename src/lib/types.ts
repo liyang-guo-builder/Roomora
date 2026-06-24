@@ -1,6 +1,6 @@
 /* Roomora — shared domain types */
 
-export type Lang = "en" | "zh";
+export type Lang = "en" | "zh" | "fr";
 
 export type SetupTab = "browse" | "match";
 

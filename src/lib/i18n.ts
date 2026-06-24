@@ -8,6 +8,9 @@ import { useStore } from "./store";
  */
 export function useT() {
   const lang = useStore((s) => s.lang);
-  const t = (en: string, zh: string) => (lang === "en" ? en : zh);
+  // Third (French) arg is optional so existing two-arg calls keep working; when
+  // French is selected but no French string is provided, fall back to English.
+  const t = (en: string, zh: string, fr?: string) =>
+    lang === "zh" ? zh : lang === "fr" ? fr ?? en : en;
   return { lang, t };
 }
