@@ -472,7 +472,7 @@ export function LandingLuxe() {
 
       {/* ───────── 3. Feature 01 — text + live before/after ───────── */}
       <Section>
-        <div className="flex flex-col items-center gap-[54px] md:flex-row">
+        <div className="flex flex-col gap-[54px] md:flex-row md:items-center">
           <Reveal className="min-w-0 flex-1">
             <Eyebrow>{t("Feature 01", "功能 01", "Atout 01")}</Eyebrow>
             <H2 className="mt-3.5">
@@ -510,7 +510,7 @@ export function LandingLuxe() {
 
       {/* ───────── 4. Feature 02 — media + text ───────── */}
       <Section>
-        <div className="flex flex-col items-center gap-[54px] md:flex-row">
+        <div className="flex flex-col gap-[54px] md:flex-row md:items-center">
           <Reveal className="order-2 min-w-0 flex-1 md:order-1">
             <div className="relative h-[340px] w-full overflow-hidden rounded-[4px] border border-[#E1DACC]">
               <Image
