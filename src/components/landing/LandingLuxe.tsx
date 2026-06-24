@@ -211,19 +211,27 @@ export function LandingLuxe() {
     },
   ];
 
-  // Showcase: real proof renders + uppercase metadata
+  // Showcase: real before/after pairs across room types (proves multi-setting)
   const showcase = [
     {
-      after: "/examples/proof_japandi.jpg",
-      label: t("Studio · Paris 14e · Japandi", "工作室 · 巴黎 14 区 · 日式简约"),
+      before: "/examples/show-living-before.jpg",
+      after: "/examples/show-living-after.jpg",
+      label: t("Living room · Mid-Century", "客厅 · 中古风"),
     },
     {
-      after: "/examples/proof_scandi.png",
-      label: t("1-bed · Lyon · Scandinavian", "一居室 · 里昂 · 北欧风"),
+      before: "/examples/show-bed-before.jpg",
+      after: "/examples/show-bed-after.jpg",
+      label: t("Bedroom · Scandinavian", "卧室 · 北欧风"),
     },
     {
-      after: "/examples/proof_boho.jpg",
-      label: t("Loft · Marseille · Bohemian", "Loft · 马赛 · 波西米亚"),
+      before: "/examples/show-kitchen-before.jpg",
+      after: "/examples/show-kitchen-after.jpg",
+      label: t("Kitchen · Modern", "厨房 · 现代简约"),
+    },
+    {
+      before: "/examples/show-garden-before.jpg",
+      after: "/examples/show-garden-after.jpg",
+      label: t("Terrace · Cosy outdoor", "露台 · 惬意户外"),
     },
   ];
 
@@ -305,7 +313,7 @@ export function LandingLuxe() {
         {/* full-bleed room render with slow Ken-Burns zoom + dark overlay */}
         <div className="absolute inset-0">
           <Image
-            src="/examples/proof_japandi.jpg"
+            src="/examples/hero-modern.jpg"
             alt=""
             fill
             priority
@@ -444,7 +452,15 @@ export function LandingLuxe() {
               />
               {/* floating product card overlay to evoke "shop the look" */}
               <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3 rounded-[3px] bg-[#F4F1EA]/95 p-3 shadow-[0_8px_30px_-8px_rgba(34,31,24,0.4)] backdrop-blur-sm">
-                <div className="h-12 w-12 shrink-0 rounded-[2px] bg-[#D9D2C5]" />
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[2px]">
+                  <Image
+                    src="/examples/item-sofa.jpg"
+                    alt={t("Oak frame sofa", "橡木框架沙发")}
+                    fill
+                    sizes="48px"
+                    className="object-cover"
+                  />
+                </div>
                 <div className="min-w-0">
                   <p className="truncate text-[12px] font-medium text-[#221F18]">
                     {t("Oak frame sofa", "橡木框架沙发")}
@@ -527,17 +543,23 @@ export function LandingLuxe() {
       {/* ───────── 7. Selected work — before/after showcase ───────── */}
       <Section>
         <Reveal>
-          <Eyebrow>{t("Selected work", "精选案例")}</Eyebrow>
-          <H2 className="mt-3.5">{t("Before, and after.", "改造前后对比。")}</H2>
+          <Eyebrow>{t("Any room", "适用任何空间")}</Eyebrow>
+          <H2 className="mt-3.5">{t("Before, and after, in any space.", "改造前后，适用任何空间。")}</H2>
+          <Sub className="mt-[18px] max-w-[54ch]">
+            {t(
+              "Living rooms, bedrooms, kitchens, even the garden. Your real space, restyled, and still yours.",
+              "客厅、卧室、厨房，甚至花园露台。你的真实空间，焕新依旧是你的。",
+            )}
+          </Sub>
         </Reveal>
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
           {showcase.map((item, i) => (
             <Reveal key={item.label} delay={i * 0.08}>
               <div>
                 <BeforeAfter
-                  height={210}
+                  height={260}
                   className="!rounded-[4px] w-full"
-                  beforeUrl="/examples/room-before.jpg"
+                  beforeUrl={item.before}
                   afterUrl={item.after}
                   reveal={false}
                   hint={false}
