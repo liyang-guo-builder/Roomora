@@ -71,7 +71,7 @@ export function MyDesignsScreen() {
             "设计一个房间并点击保存，它会出现在这里随时查看。",
           )}
         </p>
-        <Btn variant="primary" size="lg" icon="camera" className="mt-6" onClick={() => router.push("/")}>
+        <Btn variant="primary" size="lg" icon="camera" className="mt-6" onClick={() => router.push("/app")}>
           {t("Restyle a room", "设计一个房间")}
         </Btn>
       </div>

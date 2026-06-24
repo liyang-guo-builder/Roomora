@@ -13,14 +13,14 @@ import { ShareModal } from "@/components/modals/ShareModal";
 import { Toast } from "@/components/modals/Toast";
 
 /** Routes that show the bottom nav (Home / Designs / Account). */
-const NAV_ROUTES = ["/", "/designs", "/account"];
+const NAV_ROUTES = ["/app", "/designs", "/account"];
 
 function BottomNav() {
   const { t } = useT();
   const pathname = usePathname();
   const router = useRouter();
   const tabs: [string, "home" | "grid" | "gear", string][] = [
-    ["/", "home", t("Home", "首页")],
+    ["/app", "home", t("Home", "首页")],
     ["/designs", "grid", t("Designs", "设计")],
     ["/account", "gear", t("Account", "我的")],
   ];
@@ -49,16 +49,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { modal, authReason, forceOut, toast, openModal } = useFlow();
   const anon = useStore((s) => s.anon);
-  // Keep the landing page a focused conversion funnel for first-time (anon)
+  // Keep the app home a focused conversion funnel for first-time (anon)
   // visitors: no bottom nav competing with the single "add a photo" CTA.
-  // Signed-in users keep the nav on Home to reach Designs / Account.
-  const showNav = NAV_ROUTES.includes(pathname) && !(pathname === "/" && anon);
+  // Signed-in users keep the nav on /app to reach Designs / Account.
+  const showNav = NAV_ROUTES.includes(pathname) && !(pathname === "/app" && anon);
 
   // Public/standalone pages render full-width, outside the mobile app chrome
-  // (no phone frame, header, bottom nav, or in-app modals): the share pages
-  // and the legal pages (long-form, readable).
-  const bare = ["/share", "/terms", "/privacy", "/landing-preview"];
-  if (pathname && bare.some((r) => pathname.startsWith(r))) {
+  // (no phone frame, header, bottom nav, or in-app modals): the marketing
+  // homepage ("/"), the share pages, and the legal pages (long-form, readable).
+  const bare = ["/share", "/terms", "/privacy"];
+  if (pathname === "/" || (pathname && bare.some((r) => pathname.startsWith(r)))) {
     return <>{children}</>;
   }
 

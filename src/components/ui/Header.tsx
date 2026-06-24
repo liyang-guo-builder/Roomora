@@ -60,7 +60,7 @@ export function AppHeader({ onCredits, left }: { onCredits?: () => void; left?: 
   return (
     <header className="flex items-center justify-between px-5 h-[58px] shrink-0 bg-paper/90 backdrop-blur-md border-b border-line/60 sticky top-0 z-20">
       {left || (
-        <Link href="/" aria-label="Home" className="active:scale-95 transition-transform">
+        <Link href="/app" aria-label="Home" className="active:scale-95 transition-transform">
           <Logo size={30} />
         </Link>
       )}

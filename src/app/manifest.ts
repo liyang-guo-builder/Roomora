@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Roomora",
     short_name: "Roomora",
     description: "Redesign your real room. It stays your room.",
-    start_url: "/",
+    start_url: "/app",
     display: "standalone",
     background_color: "#F6F3EA",
     theme_color: "#7C8866",

@@ -43,7 +43,7 @@ export default function ResetPasswordPage() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       setState("done");
-      setTimeout(() => router.push("/"), 1400);
+      setTimeout(() => router.push("/app"), 1400);
     } catch {
       setErr(t("Could not update the password. The link may have expired.", "更新失败，链接可能已过期。"));
     } finally {
@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
                 "重置链接无效或已过期，请在登录页重新申请。",
               )}
             </p>
-            <Btn variant="primary" size="lg" full className="mt-5" onClick={() => router.push("/")}>
+            <Btn variant="primary" size="lg" full className="mt-5" onClick={() => router.push("/app")}>
               {t("Back to Roomora", "返回 Roomora")}
             </Btn>
           </>

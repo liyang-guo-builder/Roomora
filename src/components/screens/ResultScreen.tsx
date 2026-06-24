@@ -30,7 +30,7 @@ export function ResultScreen() {
       return;
     }
     resetFlow();
-    router.push("/");
+    router.push("/app");
   };
 
   const startRefine = () => {

@@ -388,7 +388,7 @@ export function LandingLuxe() {
           </Reveal>
           <Reveal delay={0.24}>
             <div className="mt-8">
-              <CtaLight href="/">{t("Try free →", "免费试用 →")}</CtaLight>
+              <CtaLight href="/app">{t("Try free →", "免费试用 →")}</CtaLight>
               <CtaGhost href="#how">{t("See how it works", "了解使用方法")}</CtaGhost>
             </div>
           </Reveal>
@@ -605,7 +605,7 @@ export function LandingLuxe() {
                 </ul>
                 <div className="mt-6 pt-2">
                   <Link
-                    href="/"
+                    href="/app"
                     className={`inline-block rounded-[2px] px-5 py-2.5 text-[13px] font-medium tracking-[0.04em] transition-colors ${
                       p.featured
                         ? "bg-[#221F18] text-[#F4F1EA] hover:bg-black"
@@ -642,7 +642,7 @@ export function LandingLuxe() {
             <em className="italic">{t("in 30 seconds.", "仅需 30 秒。")}</em>
           </h2>
           <div className="mt-8">
-            <CtaLight href="/">{t("Try free →", "免费试用 →")}</CtaLight>
+            <CtaLight href="/app">{t("Try free →", "免费试用 →")}</CtaLight>
           </div>
         </Reveal>
       </section>
