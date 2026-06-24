@@ -406,7 +406,7 @@ export function LandingLuxe() {
         <div className="relative mx-auto max-w-[1140px] px-6 pt-[72px] text-center md:px-12 md:pt-[90px]">
           <Reveal>
             <Eyebrow light>
-              {t("AI interior redesign · Paris", "AI 室内焕新 · 巴黎", "Relooking d’intérieur par IA · Paris")}
+              {t("AI interior redesign · Paris", "AI 帮你灵感落地", "Relooking d’intérieur par IA · Paris")}
             </Eyebrow>
           </Reveal>
           <Reveal delay={0.08}>
@@ -461,7 +461,7 @@ export function LandingLuxe() {
       <Section>
         <div className="flex flex-col items-center gap-[54px] md:flex-row">
           <Reveal className="min-w-0 flex-1">
-            <Eyebrow>{t("Feature 01", "特色 01", "Atout 01")}</Eyebrow>
+            <Eyebrow>{t("Feature 01", "功能 01", "Atout 01")}</Eyebrow>
             <H2 className="mt-3.5">
               {t(
                 "Your room, redesigned. Still your room.",
@@ -531,19 +531,19 @@ export function LandingLuxe() {
             </div>
           </Reveal>
           <Reveal delay={0.12} className="order-1 min-w-0 flex-1 md:order-2">
-            <Eyebrow>{t("Feature 02", "特色 02", "Atout 02")}</Eyebrow>
+            <Eyebrow>{t("Feature 02", "功能 02", "Atout 02")}</Eyebrow>
             <H2 className="mt-3.5">{t("Shop the look in one tap.", "一键购买同款。", "Achetez le look en un clic.")}</H2>
             <Sub className="mt-[18px]">
               {t(
                 "From your finished design we auto-list the real, buyable pieces, French retailers, euro prices, within your budget. Click to order.",
-                "根据你完成的设计,我们自动列出真实可购买的家具,法国零售商、欧元定价、符合你的预算。点击即可下单。",
+                "根据你完成的设计,我们自动列出真实可购买的家具,当地零售商、欧元定价、符合你的预算。点击即可下单。",
                 "À partir de votre design finalisé, nous listons automatiquement les pièces réelles et achetables : enseignes françaises, prix en euros, dans votre budget. Cliquez pour commander.",
               )}
             </Sub>
             <MetaLabel>
               {t(
                 "Real pieces · € prices · French stores",
-                "真实家具 · 欧元定价 · 法国门店",
+                "真实家具 · 欧元定价 · 当地门店",
                 "Vraies pièces · Prix en € · Enseignes françaises",
               )}
             </MetaLabel>
