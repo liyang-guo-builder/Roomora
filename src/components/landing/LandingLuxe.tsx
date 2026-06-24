@@ -413,13 +413,13 @@ export function LandingLuxe() {
             <h1 className="mx-auto mt-[22px] max-w-[18ch] font-[family-name:var(--font-playfair)] font-medium text-[clamp(40px,6.4vw,66px)] leading-[1.04] tracking-[-0.01em]">
               {t(
                 "Fall for the room you already have, ",
-                "爱上你早已拥有的房间,",
+                "让你现在的家，",
                 "Tombez amoureux de la pièce que vous avez déjà, ",
               )}
               <em className="italic">
                 {t(
                   "restyled into the look you love.",
-                  "焕新成你向往的模样。",
+                  "变成你梦想的模样。",
                   "transformée dans le style que vous aimez.",
                 )}
               </em>
