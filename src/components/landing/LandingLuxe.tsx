@@ -216,12 +216,12 @@ export function LandingLuxe() {
     {
       before: "/examples/show-living-before.jpg",
       after: "/examples/show-living-after.jpg",
-      label: t("Living room · Mid-Century", "客厅 · 中古风"),
+      label: t("Living room · Modern", "客厅 · 现代简约"),
     },
     {
       before: "/examples/show-bed-before.jpg",
       after: "/examples/show-bed-after.jpg",
-      label: t("Bedroom · Scandinavian", "卧室 · 北欧风"),
+      label: t("Bedroom · Cream", "卧室 · 奶油风"),
     },
     {
       before: "/examples/show-kitchen-before.jpg",
