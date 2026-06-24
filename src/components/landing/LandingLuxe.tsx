@@ -444,7 +444,7 @@ export function LandingLuxe() {
           <Reveal className="order-2 min-w-0 flex-1 md:order-1">
             <div className="relative h-[340px] w-full overflow-hidden rounded-[4px] border border-[#E1DACC]">
               <Image
-                src="/examples/proof_japandi.jpg"
+                src="/examples/hero-modern.jpg"
                 alt={t("A finished Roomora design", "Roomora 完成的设计")}
                 fill
                 sizes="(max-width: 768px) 100vw, 540px"
@@ -463,7 +463,7 @@ export function LandingLuxe() {
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-[12px] font-medium text-[#221F18]">
-                    {t("Oak frame sofa", "橡木框架沙发")}
+                    {t("Linen curved sofa", "亚麻弧形沙发")}
                   </p>
                   <p className="text-[11px] text-[#6b6451]">{t("€690 · La Redoute", "€690 · La Redoute")}</p>
                 </div>
