@@ -416,6 +416,7 @@ export function LandingLuxe() {
                 "让你现在的家，",
                 "Tombez amoureux de la pièce que vous avez déjà, ",
               )}
+              {lang === "zh" && <br />}
               <em className="italic">
                 {t(
                   "restyled into the look you love.",
@@ -427,10 +428,18 @@ export function LandingLuxe() {
           </Reveal>
           <Reveal delay={0.16}>
             <p className="mx-auto mt-[22px] max-w-[54ch] text-[16px] leading-[1.65] text-white/80">
-              {t(
-                "Same walls, windows and light, you control what changes. Your real room, reimagined in 30 seconds.",
-                "墙面、窗户和光线照旧,改变什么由你决定。你真实的房间,30 秒内焕然一新。",
-                "Mêmes murs, mêmes fenêtres, même lumière : vous décidez de ce qui change. Votre vraie pièce, réimaginée en 30 secondes.",
+              {lang === "zh" ? (
+                <>
+                  墙面、窗户和光线照旧，改变什么由你决定。
+                  <br />
+                  你真实的房间，30 秒内焕然一新。
+                </>
+              ) : (
+                t(
+                  "Same walls, windows and light, you control what changes. Your real room, reimagined in 30 seconds.",
+                  "墙面、窗户和光线照旧，改变什么由你决定。你真实的房间，30 秒内焕然一新。",
+                  "Mêmes murs, mêmes fenêtres, même lumière : vous décidez de ce qui change. Votre vraie pièce, réimaginée en 30 secondes.",
+                )
               )}
             </p>
           </Reveal>
