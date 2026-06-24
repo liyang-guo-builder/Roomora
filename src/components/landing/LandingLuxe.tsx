@@ -601,6 +601,17 @@ export function LandingLuxe() {
               </div>
             </Reveal>
           ))}
+          {/* growth cue: more styles on the way */}
+          <Reveal delay={0.3}>
+            <div className="flex aspect-[4/5] flex-col items-center justify-center gap-2 rounded-[4px] border border-dashed border-[#BDB4A4] bg-[#EEEAE0] px-2 text-center">
+              <span className="font-[family-name:var(--font-playfair)] text-[26px] leading-none text-[#8B9173]">
+                +
+              </span>
+              <span className="text-[11px] font-medium uppercase leading-tight tracking-[0.12em] text-[#6b6451]">
+                {t("More coming soon", "更多风格陆续上线", "Et bientôt plus")}
+              </span>
+            </div>
+          </Reveal>
         </div>
       </Section>
 
