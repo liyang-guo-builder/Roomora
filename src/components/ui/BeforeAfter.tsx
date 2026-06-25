@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { useT } from "@/lib/i18n";
 import { RoomPhoto } from "./RoomPhoto";
 import { Icon } from "./Icon";
+import { Logo } from "./Logo";
 
 /** Real interactive Before/After comparison slider. Pointer + touch.
  *  Pass beforeUrl/afterUrl to show real images; falls back to tonal placeholders. */
@@ -135,8 +136,8 @@ export function BeforeAfter({
       </span>
 
       {watermark && (
-        <span className="absolute right-3 top-3 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/25 text-white backdrop-blur-sm z-10 flex items-center gap-1">
-          <span className="font-bold">R</span> Roomora
+        <span className="absolute right-3 top-3 text-[11px] font-semibold pl-1 pr-2.5 py-1 rounded-full bg-white/25 text-white backdrop-blur-sm z-10 flex items-center gap-1.5">
+          <Logo size={18} withWord={false} /> Roomora
         </span>
       )}
 
